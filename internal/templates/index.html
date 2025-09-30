@@ -1,45 +1,57 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <title>Power4 (Connect Four)</title>
-  <link rel="stylesheet" href="/static/style.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Puissance 4 - Power4 Web</title>
+<link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <h1>Power4 (Connect Four)</h1>
+<main>
+<h1>Puissance 4</h1>
+<p class="info">{{if .Over}}{{.Message}}{{else}}Tour du joueur {{.CurrentPlayer}}{{end}}</p>
 
-  {{if .Finished}}
-    {{if gt .Winner 0}}
-      <p>🎉 Joueur {{.Winner}} a gagné !</p>
-    {{else}}
-      <p>🤝 Match nul !</p>
-    {{end}}
-    <form method="POST" action="/reset">
-      <button type="submit">Recommencer</button>
-    </form>
-  {{else}}
-    <p>Tour du joueur <strong>{{.CurrentPlayer}}</strong></p>
-  {{end}}
 
-  <!-- Boutons pour déposer les jetons -->
-  <div class="controls">
-    {{range .Columns}}
-      <form method="POST" action="/play" style="display:inline;">
-        <input type="hidden" name="col" value="{{.}}">
-        <button class="drop-btn" type="submit">↓</button>
-      </form>
-    {{end}}
-  </div>
+<div class="game-area">
+<!-- Column buttons (transparent over the board) -->
+<form class="col-choices" action="/play" method="post">
+{{range $c := seq 0 6}}
+<button class="col-btn" name="col" value="{{$c}}" aria-label="Play column {{$c}}" {{if $.Over}}disabled{{end}}></button>
+{{end}}
+</form>
 
-  <!-- Plateau du jeu -->
-  <table class="board">
-    {{range $rIdx, $row := .Board}}
-    <tr>
-      {{range $cIdx, $cell := $row}}
-        <td><div class="cell player-{{$cell}}"></div></td>
-      {{end}}
-    </tr>
-    {{end}}
-  </table>
+
+<!-- Board visual -->
+<div class="board">
+{{ $board := .Board }}
+{{ range $r := seq 0 5 }}
+<div class="row">
+{{ range $c := seq 0 6 }}
+{{ $val := index (index $board $r) $c }}
+<div class="cell">
+{{ if eq $val 0 }}
+<div class="hole empty"></div>
+{{ else if eq $val 1 }}
+<div class="hole p1"></div>
+{{ else }}
+<div class="hole p2"></div>
+{{ end }}
+</div>
+{{ end }}
+</div>
+{{ end }}
+</div>
+</div>
+
+
+<form action="/reset" method="post" class="reset-form">
+<button type="submit">Réinitialiser</button>
+</form>
+
+
+<footer>
+<p>Serveur Go • Port: 3000</p>
+</footer>
+</main>
 </body>
 </html>
