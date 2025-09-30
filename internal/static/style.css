@@ -8,7 +8,6 @@ h1 { text-align:center; margin-bottom:8px; }
 .game-area { position:relative; display:flex; justify-content:center; align-items:center; }
 
 
-/* Column buttons: invisible but capture clicks and highlight on hover */
 .col-choices { position:absolute; top:0; left:50%; transform:translateX(-50%); width:664px; height:100%; display:flex; gap:8px; padding:8px; }
 .col-choices .col-btn { flex:1; background:transparent; border:none; cursor:pointer; height:100%; }
 .col-choices .col-btn:hover { background:rgba(255,255,255,0.06); }
@@ -16,7 +15,6 @@ h1 { text-align:center; margin-bottom:8px; }
 .col-choices .col-btn[disabled] { cursor:not-allowed; }
 
 
-/* Board frame */
 .board { width:664px; height:576px; background: linear-gradient(#094f7a, #063b61); border-radius:12px; padding:18px; display:flex; flex-direction:column; justify-content:space-between; box-shadow: 0 8px 18px rgba(10,20,40,0.25), inset 0 6px 12px rgba(255,255,255,0.02); }
 .row { display:flex; gap:8px; }
 .cell { width:80px; height:80px; display:flex; align-items:center; justify-content:center; }
@@ -34,7 +32,6 @@ h1 { text-align:center; margin-bottom:8px; }
 footer { text-align:center; margin-top:18px; color:#555; }
 
 
-/* Responsive */
 @media (max-width:720px) {
 .board { width:92vw; height: (92vw * 0.86); padding:12px; }
 .cell { width:calc((92vw - 8*6 - 24px) / 7); height:calc((92vw - 8*6 - 24px) / 7); }

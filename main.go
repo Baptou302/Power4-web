@@ -42,7 +42,7 @@ func main() {
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("internal/static"))))
 
 	addr := ":3000"
-	fmt.Println("Starting server on http://localhost" + addr)
+	fmt.Println("Serveur se lance sur le port" + addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func handlePlay(w http.ResponseWriter, r *http.Request) {
 	colStr := r.FormValue("col")
 	col, err := strconv.Atoi(colStr)
 	if err != nil || col < 0 || col >= columns {
-		http.Error(w, "invalid column", http.StatusBadRequest)
+		http.Error(w, "colonne invalide", http.StatusBadRequest)
 		return
 	}
 
@@ -90,7 +90,7 @@ func handlePlay(w http.ResponseWriter, r *http.Request) {
 			game.Board[rIdx][col] = game.CurrentPlayer
 			placed = true
 			if checkWin(&game.Board, rIdx, col, game.CurrentPlayer) {
-				game.Message = fmt.Sprintf("Player %d wins!", game.CurrentPlayer)
+				game.Message = fmt.Sprintf("Joueur %d a gagné !", game.CurrentPlayer)
 				game.Over = true
 				break
 			}
@@ -99,13 +99,13 @@ func handlePlay(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !placed {
-		game.Message = "Column is full. Choose another one."
+		game.Message = "La collone est pleine choisis en une autre !"
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
 	if !game.Over && isBoardFull(&game.Board) {
-		game.Message = "Draw! The board is full."
+		game.Message = "Le tableux de jeux est plein !"
 		game.Over = true
 	}
 

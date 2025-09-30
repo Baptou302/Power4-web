@@ -13,7 +13,6 @@
 
 
 <div class="game-area">
-<!-- Column buttons (transparent over the board) -->
 <form class="col-choices" action="/play" method="post">
 {{range $c := seq 0 6}}
 <button class="col-btn" name="col" value="{{$c}}" aria-label="Play column {{$c}}" {{if $.Over}}disabled{{end}}></button>
@@ -21,7 +20,6 @@
 </form>
 
 
-<!-- Board visual -->
 <div class="board">
 {{ $board := .Board }}
 {{ range $r := seq 0 5 }}
@@ -50,7 +48,7 @@
 
 
 <footer>
-<p>Serveur Go • Port: 3000</p>
+<p>Jeux réalisé par Baptiste</p>
 </footer>
 </main>
 </body>
