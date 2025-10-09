@@ -37,4 +37,29 @@ footer { text-align:center; margin-top:18px; color:#555; }
 .cell { width:calc((92vw - 8*6 - 24px) / 7); height:calc((92vw - 8*6 - 24px) / 7); }
 .hole { width:calc((92vw - 8*6 - 24px) / 7 - 8px); height:calc((92vw - 8*6 - 24px) / 7 - 8px); }
 .col-choices { width:92vw; }
+/* Menu audio */
+.audio-menu {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 1000;
+}
+
+.audio-menu button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1.4rem;
+  transition: transform 0.2s ease;
+}
+
+.audio-menu button:hover {
+  transform: scale(1.2);
+}
 }

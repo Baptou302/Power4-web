@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Puissance 4 - Power4 Web</title>
+  <link rel="stylesheet" href="/assets/style/style.css" />
+  <style>
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffffa9;
+      backdrop-filter: blur(6px);
+      border-radius: 12px;
+      padding: 10px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    header .user-info {
+      font-weight: 600;
+    }
+    header button {
+      background: #ff3b3b;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s ease;
+    }
+    header button:hover {
+      background: #e02f2f;
+    }
+
+    /* === Lecteur Spotify Style === */
+    .audio-player {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(6px);
+      border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      width: 220px;
+      padding: 14px;
+      text-align: center;
+      z-index: 1000;
+    }
+    .audio-player img {
+      width: 100%;
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+    .audio-player .track-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+    }
+    .audio-player .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .audio-player button {
+      border: none;
+      background: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .audio-player button:hover {
+      transform: scale(1.2);
+    }
+    .audio-player:hover {
+      transform: translateY(-2px);
+      transition: transform 0.2s ease;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Redirection si pas connecté -->
+  <script>
+    const user = localStorage.getItem("currentUser");
+    if (!user) window.location.href = "/login";
+  </script>
+
+  <main>
+    <header>
+      <div class="user-info">👤 Connecté en tant que <span id="username"></span></div>
+      <button id="logoutBtn">Déconnexion</button>
+    </header>
+
+    <h1>Puissance 4</h1>
+    <p class="info">
+      {{if .Over}}{{.Message}}{{else}}Tour du joueur {{.CurrentPlayer}}{{end}}
+    </p>
+
+    <div class="game-area">
+      <form class="col-choices" action="/play" method="post">
+        {{range $c := seq 0 6}}
+          <button class="col-btn" name="col" value="{{$c}}" aria-label="Play column {{$c}}" {{if $.Over}}disabled{{end}}></button>
+        {{end}}
+      </form>
+
+      <div class="board">
+        {{ $board := .Board }}
+        {{ range $r := seq 0 5 }}
+        <div class="row">
+          {{ range $c := seq 0 6 }}
+            {{ $val := index (index $board $r) $c }}
+            <div class="cell">
+              {{ if eq $val 0 }}
+                <div class="hole empty"></div>
+              {{ else if eq $val 1 }}
+                <div class="hole p1"></div>
+              {{ else }}
+                <div class="hole p2"></div>
+              {{ end }}
+            </div>
+          {{ end }}
+        </div>
+        {{ end }}
+      </div>
+    </div>
+
+    <form action="/reset" method="post" class="reset-form">
+      <button type="submit">Réinitialiser</button>
+    </form>
+
+    <footer>
+      <p>Jeu réalisé uniquement par Baptiste</p>
+    </footer>
+  </main>
+
+  <!-- === Lecteur musique Spotify style === -->
+  <div class="audio-player">
+    <img src="/assets/musique/movie.jpg" alt="Pochette musique">
+    <div class="track-title">musique.mp3</div>
+    <div class="controls">
+      <button id="playPauseBtn" title="Lecture/Pause">▶️</button>
+      <button id="nextBtn" title="Rejouer la musique">⏭</button>
+    </div>
+  </div>
+
+  <!-- === Audio === -->
+  <audio id="bgMusic" preload="auto" loop>
+    <source src="/assets/music/movie.mp3" type="audio/mpeg">
+    Votre navigateur ne supporte pas la lecture audio.
+  </audio>
+
+  <script>
+    // Affiche le pseudo connecté
+    document.getElementById("username").textContent = user || "Inconnu";
+
+    // Gestion déconnexion
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.removeItem("currentUser");
+      window.location.href = "/login";
+    });
+
+    // --- Logique du jeu ---
+    const colButtons = document.querySelectorAll(".col-btn");
+    const info = document.querySelector(".info");
+    const resetForm = document.querySelector(".reset-form");
+
+    function renderBoard(board) {
+      const rows = board.map(
+        row => `
+        <div class="row">
+          ${row
+            .map(val => `
+              <div class="cell">
+                <div class="hole ${val === 0 ? 'empty' : val === 1 ? 'p1' : 'p2'}"></div>
+              </div>
+            `)
+            .join('')}
+        </div>`
+      ).join('');
+      document.querySelector(".board").innerHTML = rows;
+    }
+
+    colButtons.forEach(btn => {
+      btn.addEventListener("click", async e => {
+        e.preventDefault();
+        const col = btn.value;
+        const formData = new FormData();
+        formData.append("col", col);
+        const res = await fetch("/play", { method: "POST", body: formData });
+        const data = await res.json();
+        renderBoard(data.board);
+        info.textContent = data.over ? data.message : `Tour du joueur ${data.currentPlayer}`;
+      });
+    });
+
+    resetForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const res = await fetch("/reset", { method: "POST" });
+      const data = await res.json();
+      renderBoard(data.board);
+      info.textContent = `Tour du joueur ${data.currentPlayer}`;
+    });
+
+    // --- Musique ---
+    const audio = document.getElementById('bgMusic');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      audio.volume = 0.5;
+    });
+
+    playPauseBtn.addEventListener('click', () => {
+      if (audio.paused) {
+        audio.play();
+        playPauseBtn.textContent = '⏸';
+      } else {
+        audio.pause();
+        playPauseBtn.textContent = '▶️';
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      audio.currentTime = 0;
+      audio.play();
+      playPauseBtn.textContent = '⏸';
+    });
+  </script>
+</body>
+</html>

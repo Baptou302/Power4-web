@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -14,40 +15,57 @@ const (
 	columns = 7
 )
 
+// === STRUCTURE DU JEU ===
 type Game struct {
-	Board         [rows][columns]int
-	CurrentPlayer int
-	Message       string
-	Over          bool
+	Board         [rows][columns]int `json:"board"`
+	CurrentPlayer int                `json:"currentPlayer"`
+	Message       string             `json:"message"`
+	Over          bool               `json:"over"`
 	Mutex         sync.Mutex
 }
 
-var tmpl = template.Must(template.New("index.html").Funcs(template.FuncMap{
-	"seq": func(start, end int) []int {
-		s := make([]int, end-start+1)
-		for i := range s {
-			s[i] = start + i
-		}
-		return s
-	},
-}).ParseFiles("internal/templates/index.html"))
+// === VARIABLES GLOBALES ===
+var (
+	game = &Game{CurrentPlayer: 1}
 
-var game = &Game{CurrentPlayer: 1}
+	tmplIndex = template.Must(template.New("index.html").Funcs(template.FuncMap{
+		"seq": func(start, end int) []int {
+			s := make([]int, end-start+1)
+			for i := range s {
+				s[i] = start + i
+			}
+			return s
+		},
+	}).ParseFiles("templates/index.html"))
 
+	tmplLogin = template.Must(template.ParseFiles("templates/login.html"))
+)
+
+// === MAIN ===
 func main() {
 	mux := http.NewServeMux()
+
+	// Routes principales
 	mux.HandleFunc("/", handleIndex)
+	mux.HandleFunc("/login", handleLogin)
 	mux.HandleFunc("/play", handlePlay)
 	mux.HandleFunc("/reset", handleReset)
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("internal/static"))))
+
+	// Fichiers statiques
+	mux.Handle("/assets/style/", http.StripPrefix("/assets/style/", http.FileServer(http.Dir("assets/style"))))
+	mux.Handle("/assets/music/", http.StripPrefix("/assets/music/", http.FileServer(http.Dir("assets/music"))))
+	mux.Handle("/assets/musique/", http.StripPrefix("/assets/musique/", http.FileServer(http.Dir("assets/musique"))))
 
 	addr := ":3000"
-	fmt.Println("Serveur se lance sur le port" + addr)
+	fmt.Println("Serveur lancé sur le port " + addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatal(err)
 	}
 }
 
+// === HANDLERS ===
+
+// Page du jeu
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 	game.Mutex.Lock()
 	defer game.Mutex.Unlock()
@@ -58,21 +76,30 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		"Message":       game.Message,
 		"Over":          game.Over,
 	}
-	if err := tmpl.Execute(w, data); err != nil {
+
+	if err := tmplIndex.Execute(w, data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
+// Page de connexion / inscription
+func handleLogin(w http.ResponseWriter, r *http.Request) {
+	if err := tmplLogin.Execute(w, nil); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// Jouer un coup
 func handlePlay(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
 		return
 	}
 
 	colStr := r.FormValue("col")
 	col, err := strconv.Atoi(colStr)
 	if err != nil || col < 0 || col >= columns {
-		http.Error(w, "colonne invalide", http.StatusBadRequest)
+		http.Error(w, "Colonne invalide", http.StatusBadRequest)
 		return
 	}
 
@@ -80,7 +107,7 @@ func handlePlay(w http.ResponseWriter, r *http.Request) {
 	defer game.Mutex.Unlock()
 
 	if game.Over {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		writeJSON(w, game)
 		return
 	}
 
@@ -99,13 +126,13 @@ func handlePlay(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !placed {
-		game.Message = "La collone est pleine choisis en une autre !"
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		game.Message = "La colonne est pleine, choisis-en une autre !"
+		writeJSON(w, game)
 		return
 	}
 
 	if !game.Over && isBoardFull(&game.Board) {
-		game.Message = "Le tableux de jeux est plein !"
+		game.Message = "Le tableau est plein !"
 		game.Over = true
 	}
 
@@ -118,12 +145,13 @@ func handlePlay(w http.ResponseWriter, r *http.Request) {
 		game.Message = ""
 	}
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	writeJSON(w, game)
 }
 
+// Réinitialiser le plateau
 func handleReset(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
 		return
 	}
 	game.Mutex.Lock()
@@ -132,7 +160,14 @@ func handleReset(w http.ResponseWriter, r *http.Request) {
 	game.CurrentPlayer = 1
 	game.Message = ""
 	game.Over = false
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	writeJSON(w, game)
+}
+
+// === UTILITAIRES ===
+
+func writeJSON(w http.ResponseWriter, g *Game) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(g)
 }
 
 func isBoardFull(b *[rows][columns]int) bool {
