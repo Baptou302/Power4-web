@@ -6,71 +6,59 @@
   <title>Connexion - Puissance 4</title>
   <link rel="stylesheet" href="/assets/style/style.css">
   <style>
-    body { display:flex; justify-content:center; align-items:center; height:100vh; background:#f0f4ff; }
+    body {
+      display:flex; justify-content:center; align-items:center;
+      height:100vh; background:#f0f4ff;
+    }
     .login-box {
-      background:#fff; padding:32px; border-radius:16px; box-shadow:0 6px 20px rgba(0,0,0,0.15);
+      background:#fff; padding:32px; border-radius:16px;
+      box-shadow:0 6px 20px rgba(0,0,0,0.15);
       width:320px; text-align:center;
     }
-    input { width:100%; padding:10px; margin:8px 0; border-radius:8px; border:1px solid #ccc; }
+    input {
+      width:100%; padding:10px; margin:8px 0;
+      border-radius:8px; border:1px solid #ccc;
+    }
     button {
       width:100%; padding:10px; border:none; border-radius:8px;
       background:#0077ff; color:#fff; font-weight:600; cursor:pointer;
     }
     button:hover { background:#005fd4; }
-    .switch { margin-top:12px; font-size:0.9rem; color:#333; cursor:pointer; text-decoration:underline; }
+    .switch { margin-top:12px; font-size:0.9rem; color:#333;
+      cursor:pointer; text-decoration:underline; }
   </style>
 </head>
 <body>
   <div class="login-box">
     <h2 id="formTitle">Créer un compte</h2>
-    <input type="text" id="username" placeholder="Nom d'utilisateur">
-    <input type="password" id="password" placeholder="Mot de passe">
-    <button id="submitBtn">S'inscrire</button>
+    <form id="authForm" action="/register" method="POST">
+      <input type="text" name="username" placeholder="Nom d'utilisateur" required>
+      <input type="password" name="password" placeholder="Mot de passe" required>
+      <button type="submit" id="submitBtn">S'inscrire</button>
+    </form>
     <p class="switch" id="toggleMode">Déjà un compte ? Se connecter</p>
   </div>
 
   <script>
-    let mode = "register";
+    const form = document.getElementById("authForm");
     const title = document.getElementById("formTitle");
     const btn = document.getElementById("submitBtn");
     const toggle = document.getElementById("toggleMode");
+    let mode = "register";
 
     toggle.addEventListener("click", () => {
-      mode = mode === "register" ? "login" : "register";
-      title.textContent = mode === "register" ? "Créer un compte" : "Connexion";
-      btn.textContent = mode === "register" ? "S'inscrire" : "Se connecter";
-      toggle.textContent = mode === "register"
-        ? "Déjà un compte ? Se connecter"
-        : "Pas encore de compte ? Créer un compte";
-    });
-
-    btn.addEventListener("click", () => {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
-      if (!username || !password) {
-        alert("Veuillez remplir tous les champs.");
-        return;
-      }
-
-      const users = JSON.parse(localStorage.getItem("users") || "{}");
-
       if (mode === "register") {
-        if (users[username]) {
-          alert("Ce nom d'utilisateur existe déjà !");
-          return;
-        }
-        users[username] = btoa(password); // encodage simple
-        localStorage.setItem("users", JSON.stringify(users));
-        localStorage.setItem("currentUser", username);
-        alert("Compte créé avec succès !");
-        window.location.href = "/";
+        mode = "login";
+        form.action = "/login";
+        title.textContent = "Connexion";
+        btn.textContent = "Se connecter";
+        toggle.textContent = "Pas encore de compte ? Créer un compte";
       } else {
-        if (!users[username] || users[username] !== btoa(password)) {
-          alert("Identifiants incorrects.");
-          return;
-        }
-        localStorage.setItem("currentUser", username);
-        window.location.href = "/";
+        mode = "register";
+        form.action = "/register";
+        title.textContent = "Créer un compte";
+        btn.textContent = "S'inscrire";
+        toggle.textContent = "Déjà un compte ? Se connecter";
       }
     });
   </script>
