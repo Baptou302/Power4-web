@@ -7,10 +7,11 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // --- STRUCTURE DU JEU ---
-
 type Game struct {
 	Rows, Cols int
 	Board      [][]int
@@ -18,13 +19,12 @@ type Game struct {
 	Over       bool
 	Message    string
 	Turn       int
-	GravityUp  bool // pour le mode inverse
+	GravityUp  bool
 	Mutex      sync.Mutex
 }
 
 var currentGame *Game
 
-// Nouvelle partie
 func newGame(rows, cols int) *Game {
 	board := make([][]int, rows)
 	for i := range board {
@@ -48,13 +48,17 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
 	tmplPath := filepath.Join("templates", "index.html")
 	funcMap := template.FuncMap{
 		"seq": func(start, end int) []int {
-			s := make([]int, end-start)
+			if end < start {
+				return []int{}
+			}
+			s := make([]int, end-start+1)
 			for i := range s {
 				s[i] = start + i
 			}
 			return s
 		},
 	}
+
 	tmpl, err := template.New("index.html").Funcs(funcMap).ParseFiles(tmplPath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -62,13 +66,13 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]interface{}{
-		"Board":   currentGame.Board,
-		"Current": currentGame.Current,
-		"Message": currentGame.Message,
-		"Over":    currentGame.Over,
-		"Rows":    currentGame.Rows,
-		"Cols":    currentGame.Cols,
-		"Gravity": currentGame.GravityUp,
+		"Board":         currentGame.Board,
+		"CurrentPlayer": currentGame.Current,
+		"Message":       currentGame.Message,
+		"Over":          currentGame.Over,
+		"Rows":          currentGame.Rows,
+		"Cols":          currentGame.Cols,
+		"Gravity":       currentGame.GravityUp,
 	}
 
 	tmpl.Execute(w, data)
@@ -105,7 +109,6 @@ func HandleReset(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-// Page de login
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		tmpl, _ := template.ParseFiles(filepath.Join("templates", "login.html"))
@@ -118,7 +121,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	err := ValidateUser(username, password)
 	if err != nil {
-		http.Error(w, "Identifiants invalides", http.StatusUnauthorized)
+		http.Error(w, "Identifiants invalides: "+err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -136,9 +139,28 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
-	err := RegisterUser(username, password)
+	// Vérifier si le pseudo est déjà pris
+	exists, err := isUsernameTaken(username)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusConflict)
+		http.Error(w, "Erreur MySQL: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if exists {
+		http.Error(w, "Ce pseudo est déjà utilisé", http.StatusConflict)
+		return
+	}
+
+	// Hash mot de passe
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Erreur hash mot de passe", http.StatusInternalServerError)
+		return
+	}
+
+	// Insertion dans la DB
+	_, err = DB.Exec("INSERT INTO users (username, password) VALUES (?, ?)", username, hashedPassword)
+	if err != nil {
+		http.Error(w, "Erreur MySQL: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -168,7 +190,7 @@ func placeToken(col int) {
 	}
 
 	g.Turn++
-	if g.Turn%5 == 0 { // tous les 5 tours, inversion de gravité
+	if g.Turn%5 == 0 {
 		g.GravityUp = !g.GravityUp
 		g.Message = "⚡ Gravité inversée ! ⚡"
 	}
@@ -185,7 +207,7 @@ func placeToken(col int) {
 		return
 	}
 
-	g.Current = 3 - g.Current // change de joueur
+	g.Current = 3 - g.Current
 }
 
 // --- FONCTIONS UTILITAIRES ---
@@ -194,7 +216,7 @@ func checkWin(board [][]int, player int) bool {
 	rows := len(board)
 	cols := len(board[0])
 
-	// horizontal
+	// Horizontal
 	for r := 0; r < rows; r++ {
 		for c := 0; c < cols-3; c++ {
 			if board[r][c] == player && board[r][c+1] == player &&
@@ -204,7 +226,7 @@ func checkWin(board [][]int, player int) bool {
 		}
 	}
 
-	// vertical
+	// Vertical
 	for r := 0; r < rows-3; r++ {
 		for c := 0; c < cols; c++ {
 			if board[r][c] == player && board[r+1][c] == player &&
@@ -214,7 +236,7 @@ func checkWin(board [][]int, player int) bool {
 		}
 	}
 
-	// diagonales ↘ et ↙
+	// Diagonales
 	for r := 0; r < rows-3; r++ {
 		for c := 0; c < cols-3; c++ {
 			if board[r][c] == player && board[r+1][c+1] == player &&
@@ -241,4 +263,16 @@ func isFull(board [][]int) bool {
 		}
 	}
 	return true
+}
+
+// --- UTILITAIRES DB ---
+
+func isUsernameTaken(username string) (bool, error) {
+	var exists bool
+	row := DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)", username)
+	err := row.Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
 }

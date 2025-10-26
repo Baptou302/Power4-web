@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// --- STRUCTURES ET VARIABLES ---
 type Session struct {
 	Username  string
 	ExpiresAt time.Time
@@ -18,14 +19,17 @@ var (
 	mu           sync.Mutex
 )
 
+// --- GÉNÉRATION DE TOKEN ---
 func randomToken(n int) string {
 	b := make([]byte, n)
 	_, _ = rand.Read(b)
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
+// --- CRÉATION DE SESSION ---
 func CreateSession(w http.ResponseWriter, username string) {
 	token := randomToken(32)
+
 	mu.Lock()
 	sessionStore[token] = Session{
 		Username:  username,
@@ -41,16 +45,37 @@ func CreateSession(w http.ResponseWriter, username string) {
 	})
 }
 
+// --- RÉCUPÉRATION DE L’UTILISATEUR ---
 func GetUsernameFromRequest(r *http.Request) string {
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
 		return ""
 	}
+
 	mu.Lock()
 	defer mu.Unlock()
+
 	session, ok := sessionStore[cookie.Value]
 	if !ok || time.Now().After(session.ExpiresAt) {
 		return ""
 	}
 	return session.Username
+}
+
+// --- SUPPRESSION DE SESSION (LOGOUT) ---
+func DeleteSession(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_token")
+	if err == nil {
+		mu.Lock()
+		delete(sessionStore, cookie.Value)
+		mu.Unlock()
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+	})
 }
