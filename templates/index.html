@@ -37,6 +37,43 @@
     .audio-player button { border:none; background:none; font-size:1.4rem; cursor:pointer; transition:transform 0.2s ease; }
     .audio-player button:hover { transform: scale(1.2); }
     .audio-player:hover { transform: translateY(-2px); transition:transform 0.2s ease; }
+
+    /* Styles pour l'affichage du mode actuel */
+    .current-mode-display {
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(6px);
+      border-radius: 12px;
+      padding: 15px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .current-mode-display h3 {
+      margin: 0;
+      color: #333;
+      font-size: 1.1rem;
+    }
+    #currentModeText {
+      color: #4CAF50;
+      font-weight: 600;
+    }
+    .change-mode-btn {
+      padding: 8px 16px;
+      border: 2px solid #4CAF50;
+      background: white;
+      color: #4CAF50;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .change-mode-btn:hover {
+      background: #4CAF50;
+      color: white;
+    }
   </style>
 </head>
 
@@ -49,6 +86,12 @@
 
   <h1>Puissance 4</h1>
   <p class="info"></p>
+
+  <!-- Affichage du mode de jeu actuel -->
+  <div class="current-mode-display">
+    <h3>Mode de jeu actuel : <span id="currentModeText">Chargement...</span></h3>
+    <button id="changeModeBtn" class="change-mode-btn">🔄 Changer de mode</button>
+  </div>
 
   <div class="game-area">
     <form class="col-choices" action="/play" method="post">
@@ -87,8 +130,21 @@
 </audio>
 
 <script>
+// Variables globales
+let currentMode = 'human';
+let selectedDifficulty = 'easy';
+
+// Fonction pour obtenir le nom de la difficulté
+function getDifficultyName(diff) {
+  switch(diff) {
+    case 'easy': return 'Facile';
+    case 'medium': return 'Intermédiaire';
+    case 'hard': return 'Hardcore';
+    default: return 'Facile';
+  }
+}
+
 async function init() {
-  // Vérification utilisateur connecté
   const resUser = await fetch("/whoami");
   if (!resUser.ok) {
     window.location.href = "/login";
@@ -98,7 +154,27 @@ async function init() {
   const username = dataUser.username;
   document.getElementById("username").textContent = username || "Inconnu";
 
-  // Logout
+  // Récupérer les paramètres de l'URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const mode = urlParams.get('mode') || 'human';
+  const difficulty = urlParams.get('difficulty') || 'easy';
+  
+  // Mettre à jour l'interface selon le mode
+  if (mode === 'ai') {
+    currentMode = 'ai';
+    selectedDifficulty = difficulty;
+    document.getElementById('currentModeText').textContent = `🤖 Contre l'IA (${getDifficultyName(difficulty)})`;
+    
+    // Démarrer une partie IA
+    startNewGame();
+  } else {
+    currentMode = 'human';
+    document.getElementById('currentModeText').textContent = '👥 2 Joueurs';
+    
+    // Démarrer une partie normale
+    startNewGame();
+  }
+
   document.getElementById("logoutBtn").addEventListener("click", async () => {
     try {
       await fetch("/logout", { method: "POST" });
@@ -109,16 +185,21 @@ async function init() {
     }
   });
 
-  // DOM éléments
   const colButtons = document.querySelectorAll(".col-btn");
   const info = document.querySelector(".info");
   const resetForm = document.querySelector(".reset-form");
   const boardEl = document.querySelector(".board");
 
   function renderBoard(board) {
+    if (!boardEl) {
+      console.error("boardEl not found!");
+      return;
+    }
+    
     boardEl.innerHTML = "";
+    
     if (!board || board.length === 0) {
-      // Grille vide par défaut
+      // Grille vide par défaut (6x7)
       for (let row = 0; row < 6; row++) {
         const rowDiv = document.createElement("div");
         rowDiv.className = "row";
@@ -135,6 +216,7 @@ async function init() {
       return;
     }
     
+    // Afficher le plateau reçu du serveur
     board.forEach(row => {
       const rowDiv = document.createElement("div");
       rowDiv.className = "row";
@@ -150,17 +232,46 @@ async function init() {
     });
   }
 
-  // Jouer
   colButtons.forEach(btn => {
     btn.addEventListener("click", async e => {
       e.preventDefault();
+      e.stopPropagation();
+      
       const col = btn.value;
-      const formData = new FormData();
-      formData.append("col", col);
-      const res = await fetch("/play", { method: "POST", body: formData });
-      const data = await res.json();
-      renderBoard(data.board);
-      info.textContent = data.over ? data.message : `Tour du joueur ${data.currentPlayer}`;
+      console.log("Clic sur la colonne:", col);
+      
+      try {
+        const formData = new FormData();
+        formData.append("col", col);
+        const res = await fetch("/play", { method: "POST", body: formData });
+        
+        if (!res.ok) {
+          console.error("Erreur serveur:", res.status);
+          info.textContent = "Erreur lors du jeu";
+          return;
+        }
+        
+        const data = await res.json();
+        console.log("Réponse du serveur:", data);
+        
+        // Mettre à jour le plateau
+        renderBoard(data.board);
+        
+        if (data.over) {
+          info.textContent = data.message;
+        } else if (currentMode === 'ai') {
+          if (data.currentPlayer === 1) {
+            info.textContent = "Votre tour !";
+          } else {
+            info.textContent = "L'IA réfléchit...";
+          }
+        } else {
+          info.textContent = `Tour du joueur ${data.currentPlayer}`;
+        }
+      } catch (error) {
+        console.error("Erreur lors du jeu:", error);
+        info.textContent = "Erreur de connexion";
+      }
     });
   });
 
@@ -172,8 +283,55 @@ async function init() {
     info.textContent = `Tour du joueur ${data.currentPlayer}`;
   });
 
+  // Bouton de changement de mode
+  document.getElementById('changeModeBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Changement de mode demandé");
+    window.location.href = '/mode-selection';
+  });
+
+  // Initialiser la grille vide après que les éléments DOM soient disponibles
   renderBoard(null); 
-  info.textContent = "Cliquez sur une colonne pour jouer !";
+  info.textContent = "Chargement...";
+
+  // Fonction pour démarrer une nouvelle partie
+  async function startNewGame() {
+    if (currentMode === 'ai') {
+      try {
+        const formData = new FormData();
+        formData.append('difficulty', selectedDifficulty);
+        const res = await fetch('/new-ai-game', { method: 'POST', body: formData });
+        if (res.ok) {
+          const data = await res.json();
+          renderBoard(data.board);
+          info.textContent = data.message;
+        } else {
+          console.error('Erreur serveur:', res.status);
+          info.textContent = 'Erreur lors du démarrage de la partie IA';
+        }
+      } catch (error) {
+        console.error('Erreur lors du démarrage de la partie IA:', error);
+        info.textContent = 'Erreur lors du démarrage de la partie';
+      }
+    } else {
+      // Mode 2 joueurs - réinitialiser la partie normale
+      try {
+        const res = await fetch('/reset', { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          renderBoard(data.board);
+          info.textContent = `Tour du joueur ${data.currentPlayer}`;
+        } else {
+          console.error('Erreur serveur:', res.status);
+          info.textContent = 'Erreur lors de la réinitialisation';
+        }
+      } catch (error) {
+        console.error('Erreur lors de la réinitialisation:', error);
+        info.textContent = 'Erreur lors de la réinitialisation';
+      }
+    }
+  }
 }
 
 const audio = document.getElementById('bgMusic');

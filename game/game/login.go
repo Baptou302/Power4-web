@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 )
 
-// URL: /login
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		username := r.FormValue("username")
@@ -19,7 +18,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		}
 
 		CreateSession(w, username)
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Redirect(w, r, "/mode-selection", http.StatusSeeOther)
 		return
 	}
 

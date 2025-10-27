@@ -8,11 +8,11 @@ h1 { text-align:center; margin-bottom:8px; }
 .game-area { position:relative; display:flex; justify-content:center; align-items:center; }
 
 
-.col-choices { position:absolute; top:0; left:50%; transform:translateX(-50%); width:664px; height:100%; display:flex; gap:8px; padding:8px; }
-.col-choices .col-btn { flex:1; background:transparent; border:none; cursor:pointer; height:100%; }
-.col-choices .col-btn:hover { background:rgba(255,255,255,0.06); }
-.col-choices .col-btn:active { background:rgba(0,0,0,0.08); }
-.col-choices .col-btn[disabled] { cursor:not-allowed; }
+.col-choices { position:absolute; top:0; left:50%; transform:translateX(-50%); width:664px; height:100%; display:flex; gap:8px; padding:8px; z-index: 10; }
+.col-choices .col-btn { flex:1; background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.3); cursor:pointer; height:100%; border-radius:8px; transition:all 0.2s ease; }
+.col-choices .col-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.col-choices .col-btn:active { background:rgba(255,255,255,0.3); }
+.col-choices .col-btn[disabled] { cursor:not-allowed; opacity:0.5; }
 
 
 .board { width:664px; height:576px; background: linear-gradient(#094f7a, #063b61); border-radius:12px; padding:18px; display:flex; flex-direction:column; justify-content:space-between; box-shadow: 0 8px 18px rgba(10,20,40,0.25), inset 0 6px 12px rgba(255,255,255,0.02); }

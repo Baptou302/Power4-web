@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Choisir le mode de jeu - Power4 Web</title>
+  <link rel="stylesheet" href="/assets/style/style.css" />
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 20px;
+    }
+    
+    .mode-container {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+    }
+    
+    .mode-container h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+    }
+    
+    .mode-container p {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 1.1rem;
+    }
+    
+    .user-info {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 30px;
+      color: #555;
+    }
+    
+    .mode-options {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .mode-card {
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 15px;
+      padding: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+    
+    .mode-card:hover {
+      border-color: #4CAF50;
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(76, 175, 80, 0.2);
+    }
+    
+    .mode-card h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 1.5rem;
+    }
+    
+    .mode-card p {
+      margin: 0;
+      color: #666;
+      font-size: 1rem;
+    }
+    
+    .mode-icon {
+      font-size: 3rem;
+      margin-bottom: 15px;
+    }
+    
+    .difficulty-selector {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      display: none;
+    }
+    
+    .difficulty-selector h4 {
+      margin: 0 0 15px 0;
+      color: #333;
+    }
+    
+    .difficulty-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .difficulty-btn {
+      padding: 10px 20px;
+      border: 2px solid #ddd;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    
+    .difficulty-btn:hover {
+      border-color: #2196F3;
+      background: #f0f8ff;
+    }
+    
+    .difficulty-btn.selected {
+      border-color: #2196F3;
+      background: #2196F3;
+      color: white;
+    }
+    
+    .start-btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 10px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.2s ease;
+    }
+    
+    .start-btn:hover {
+      background: #45a049;
+    }
+    
+    .start-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .logout-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #ff3b3b;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s ease;
+    }
+    
+    .logout-btn:hover {
+      background: #e02f2f;
+    }
+  </style>
+</head>
+
+<body>
+  <button class="logout-btn" id="logoutBtn">Déconnexion</button>
+  
+  <div class="mode-container">
+    <h1>🎮 Power4 Web</h1>
+    <p>Choisissez votre mode de jeu</p>
+    
+    <div class="user-info">
+      👤 Connecté en tant que <span id="username">Inconnu</span>
+    </div>
+    
+    <div class="mode-options">
+      <div class="mode-card" id="vsHumanCard">
+        <div class="mode-icon">👥</div>
+        <h3>2 Joueurs</h3>
+        <p>Affrontez un ami en local</p>
+      </div>
+      
+      <div class="mode-card" id="vsAICard">
+        <div class="mode-icon">🤖</div>
+        <h3>Contre l'IA</h3>
+        <p>Défiez l'intelligence artificielle</p>
+        
+        <div class="difficulty-selector" id="difficultySelector">
+          <h4>Choisissez la difficulté :</h4>
+          <div class="difficulty-buttons">
+            <button class="difficulty-btn selected" data-difficulty="easy">🟢 Facile</button>
+            <button class="difficulty-btn" data-difficulty="medium">🟡 Intermédiaire</button>
+            <button class="difficulty-btn" data-difficulty="hard">🔴 Hardcore</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <button class="start-btn" id="startBtn" disabled>Commencer la partie</button>
+  </div>
+
+  <script>
+    let selectedMode = null;
+    let selectedDifficulty = 'easy';
+
+    // Récupérer les informations utilisateur
+    async function init() {
+      try {
+        const res = await fetch('/whoami');
+        if (!res.ok) {
+          window.location.href = '/login';
+          return;
+        }
+        const data = await res.json();
+        document.getElementById('username').textContent = data.username;
+      } catch (error) {
+        console.error('Erreur:', error);
+        window.location.href = '/login';
+      }
+    }
+
+    // Gestion de la déconnexion
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/logout', { method: 'POST' });
+        if (response.ok) {
+          window.location.href = '/login';
+        } else {
+          console.error('Erreur lors de la déconnexion');
+          window.location.href = '/login';
+        }
+      } catch (error) {
+        console.error('Erreur lors de la déconnexion:', error);
+        window.location.href = '/login';
+      }
+    });
+
+    // Sélection du mode 2 joueurs
+    document.getElementById('vsHumanCard').addEventListener('click', () => {
+      selectedMode = 'human';
+      document.getElementById('vsHumanCard').style.borderColor = '#4CAF50';
+      document.getElementById('vsAICard').style.borderColor = '#e0e0e0';
+      document.getElementById('difficultySelector').style.display = 'none';
+      document.getElementById('startBtn').disabled = false;
+    });
+
+    // Sélection du mode IA
+    document.getElementById('vsAICard').addEventListener('click', () => {
+      selectedMode = 'ai';
+      document.getElementById('vsAICard').style.borderColor = '#4CAF50';
+      document.getElementById('vsHumanCard').style.borderColor = '#e0e0e0';
+      document.getElementById('difficultySelector').style.display = 'block';
+      document.getElementById('startBtn').disabled = false;
+    });
+
+    // Sélection de la difficulté
+    document.querySelectorAll('.difficulty-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedDifficulty = btn.dataset.difficulty;
+      });
+    });
+
+    // Démarrer la partie
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      if (selectedMode === 'ai') {
+        // Mode IA - rediriger vers la page de jeu avec la difficulté
+        window.location.href = `/?mode=ai&difficulty=${selectedDifficulty}`;
+      } else {
+        // Mode 2 joueurs - rediriger vers la page de jeu normale
+        window.location.href = '/?mode=human';
+      }
+    });
+
+    // Initialiser la page
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
