@@ -10,7 +10,7 @@ import (
 func main() {
 	addr := ":3000"
 
-	game.ConnectDB() // 🔥 Initialise la base SQLite
+	game.ConnectDB()
 
 	fmt.Println("✅ Serveur Power4 Web sur http://localhost" + addr)
 
@@ -20,6 +20,8 @@ func main() {
 	mux.HandleFunc("/reset", game.HandleReset)
 	mux.HandleFunc("/login", game.HandleLogin)
 	mux.HandleFunc("/register", game.HandleRegister)
+	mux.HandleFunc("/logout", game.HandleLogout)
+	mux.HandleFunc("/whoami", game.HandleWhoami)
 
 	mux.Handle("/style/", http.StripPrefix("/style/", http.FileServer(http.Dir("style"))))
 	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))

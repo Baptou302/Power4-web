@@ -1,6 +1,7 @@
 package game
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -31,16 +32,22 @@ func newGame(rows, cols int) *Game {
 		board[i] = make([]int, cols)
 	}
 	return &Game{
-		Rows:    rows,
-		Cols:    cols,
-		Board:   board,
-		Current: 1,
+		Rows:      rows,
+		Cols:      cols,
+		Board:     board,
+		Current:   1,
+		GravityUp: false, // Gravité vers le bas par défaut
 	}
 }
 
 // --- HANDLERS WEB ---
-
 func HandleIndex(w http.ResponseWriter, r *http.Request) {
+	user := GetUsernameFromRequest(r)
+	if user == "" {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	if currentGame == nil {
 		currentGame = newGame(6, 7)
 	}
@@ -73,21 +80,27 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
 		"Rows":          currentGame.Rows,
 		"Cols":          currentGame.Cols,
 		"Gravity":       currentGame.GravityUp,
+		"Username":      user,
 	}
 
 	tmpl.Execute(w, data)
 }
-
 func HandlePlay(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+		return
+	}
+
+	user := GetUsernameFromRequest(r)
+	if user == "" {
+		http.Error(w, "Non autorisé", http.StatusUnauthorized)
 		return
 	}
 
 	colStr := r.FormValue("col")
 	col, err := strconv.Atoi(colStr)
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Error(w, "Colonne invalide", http.StatusBadRequest)
 		return
 	}
 
@@ -95,38 +108,36 @@ func HandlePlay(w http.ResponseWriter, r *http.Request) {
 	defer currentGame.Mutex.Unlock()
 
 	if currentGame.Over {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Error(w, "Partie terminée", http.StatusConflict)
 		return
 	}
 
 	placeToken(col)
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(w, `{
+        "board": %s,
+        "currentPlayer": %d,
+        "message": "%s",
+        "over": %t
+    }`, toJSON(currentGame.Board), currentGame.Current, currentGame.Message, currentGame.Over)
 }
 
 func HandleReset(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+		return
+	}
+
 	currentGame = newGame(6, 7)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
 
-func HandleLogin(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet {
-		tmpl, _ := template.ParseFiles(filepath.Join("templates", "login.html"))
-		tmpl.Execute(w, nil)
-		return
-	}
-
-	username := r.FormValue("username")
-	password := r.FormValue("password")
-
-	err := ValidateUser(username, password)
-	if err != nil {
-		http.Error(w, "Identifiants invalides: "+err.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	CreateSession(w, username)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(w, `{
+        "board": %s,
+        "currentPlayer": %d,
+        "message": "%s",
+        "over": %t
+    }`, toJSON(currentGame.Board), currentGame.Current, currentGame.Message, currentGame.Over)
 }
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
@@ -139,28 +150,15 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
-	// Vérifier si le pseudo est déjà pris
-	exists, err := isUsernameTaken(username)
-	if err != nil {
-		http.Error(w, "Erreur MySQL: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if exists {
-		http.Error(w, "Ce pseudo est déjà utilisé", http.StatusConflict)
-		return
-	}
-
-	// Hash mot de passe
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "Erreur hash mot de passe", http.StatusInternalServerError)
 		return
 	}
 
-	// Insertion dans la DB
-	_, err = DB.Exec("INSERT INTO users (username, password) VALUES (?, ?)", username, hashedPassword)
+	err = RegisterUser(username, string(hashedPassword))
 	if err != nil {
-		http.Error(w, "Erreur MySQL: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusConflict)
 		return
 	}
 
@@ -169,7 +167,6 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 // --- LOGIQUE DU JEU ---
-
 func placeToken(col int) {
 	g := currentGame
 
@@ -190,10 +187,8 @@ func placeToken(col int) {
 	}
 
 	g.Turn++
-	if g.Turn%5 == 0 {
-		g.GravityUp = !g.GravityUp
-		g.Message = "⚡ Gravité inversée ! ⚡"
-	}
+	// La gravité reste toujours vers le bas pour un Puissance 4 normal
+	// g.GravityUp reste false par défaut
 
 	if checkWin(g.Board, g.Current) {
 		g.Over = true
@@ -210,13 +205,15 @@ func placeToken(col int) {
 	g.Current = 3 - g.Current
 }
 
-// --- FONCTIONS UTILITAIRES ---
+// --- UTILITAIRES DB ---
+// La fonction isUsernameTaken est maintenant dans db.go
 
+// --- FONCTIONS UTILITAIRES ---
 func checkWin(board [][]int, player int) bool {
 	rows := len(board)
 	cols := len(board[0])
 
-	// Horizontal
+	// horizontal
 	for r := 0; r < rows; r++ {
 		for c := 0; c < cols-3; c++ {
 			if board[r][c] == player && board[r][c+1] == player &&
@@ -226,7 +223,7 @@ func checkWin(board [][]int, player int) bool {
 		}
 	}
 
-	// Vertical
+	// vertical
 	for r := 0; r < rows-3; r++ {
 		for c := 0; c < cols; c++ {
 			if board[r][c] == player && board[r+1][c] == player &&
@@ -236,7 +233,7 @@ func checkWin(board [][]int, player int) bool {
 		}
 	}
 
-	// Diagonales
+	// diagonales ↘ et ↙
 	for r := 0; r < rows-3; r++ {
 		for c := 0; c < cols-3; c++ {
 			if board[r][c] == player && board[r+1][c+1] == player &&
@@ -265,14 +262,22 @@ func isFull(board [][]int) bool {
 	return true
 }
 
-// --- UTILITAIRES DB ---
+func HandleLogout(w http.ResponseWriter, r *http.Request) {
+	DeleteSession(w, r) // ou ta logique pour supprimer le cookie/session
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
 
-func isUsernameTaken(username string) (bool, error) {
-	var exists bool
-	row := DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)", username)
-	err := row.Scan(&exists)
-	if err != nil {
-		return false, err
+func HandleWhoami(w http.ResponseWriter, r *http.Request) {
+	username := GetUsernameFromRequest(r)
+	if username == "" {
+		http.Error(w, "Non connecté", http.StatusUnauthorized)
+		return
 	}
-	return exists, nil
+
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(w, `{"username": "%s"}`, username)
+}
+func toJSON(v interface{}) string {
+	b, _ := json.Marshal(v)
+	return string(b)
 }

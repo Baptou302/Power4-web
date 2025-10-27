@@ -41,48 +41,27 @@
 </head>
 
 <body>
-<script>
-  const user = localStorage.getItem("currentUser");
-  if (!user) window.location.href = "/login";
-</script>
-
 <main>
   <header>
-    <div class="user-info">👤 Connecté en tant que <span id="username"></span></div>
+    <div class="user-info">👤 Connecté en tant que <span id="username">Inconnu</span></div>
     <button id="logoutBtn">Déconnexion</button>
   </header>
 
   <h1>Puissance 4</h1>
-  <p class="info">
-    {{if .Over}}{{.Message}}{{else}}Tour du joueur {{.CurrentPlayer}}{{end}}
-  </p>
+  <p class="info"></p>
 
   <div class="game-area">
     <form class="col-choices" action="/play" method="post">
-      {{range $c := seq 0 6}}
-        <button class="col-btn" name="col" value="{{$c}}" aria-label="Play column {{$c}}" {{if $.Over}}disabled{{end}}></button>
-      {{end}}
+      <button class="col-btn" name="col" value="0"></button>
+      <button class="col-btn" name="col" value="1"></button>
+      <button class="col-btn" name="col" value="2"></button>
+      <button class="col-btn" name="col" value="3"></button>
+      <button class="col-btn" name="col" value="4"></button>
+      <button class="col-btn" name="col" value="5"></button>
+      <button class="col-btn" name="col" value="6"></button>
     </form>
 
-    <div class="board">
-      {{ $board := .Board }}
-      {{ range $r := seq 0 5 }}
-      <div class="row">
-        {{ range $c := seq 0 6 }}
-          {{ $val := index (index $board $r) $c }}
-          <div class="cell">
-            {{ if eq $val 0 }}
-              <div class="hole empty"></div>
-            {{ else if eq $val 1 }}
-              <div class="hole p1"></div>
-            {{ else }}
-              <div class="hole p2"></div>
-            {{ end }}
-          </div>
-        {{ end }}
-      </div>
-      {{ end }}
-    </div>
+    <div class="board"></div>
   </div>
 
   <form action="/reset" method="post" class="reset-form">
@@ -90,13 +69,13 @@
   </form>
 
   <footer>
-    <p>Jeu réalisé uniquement par Baptiste</p>
+    <p>Jeu réalisé uniquement par Baptiste Lecoq</p>
   </footer>
 </main>
 
 <div class="audio-player">
   <img src="/assets/musique/movie.jpg" alt="Pochette musique">
-  <div class="track-title">musique.mp3</div>
+  <div class="track-title">movie L2B</div>
   <div class="controls">
     <button id="playPauseBtn" title="Lecture/Pause">▶️</button>
     <button id="nextBtn" title="Rejouer la musique">⏭</button>
@@ -108,66 +87,107 @@
 </audio>
 
 <script>
-document.getElementById("username").textContent = user || "Inconnu";
+async function init() {
+  // Vérification utilisateur connecté
+  const resUser = await fetch("/whoami");
+  if (!resUser.ok) {
+    window.location.href = "/login";
+    return;
+  }
+  const dataUser = await resUser.json();
+  const username = dataUser.username;
+  document.getElementById("username").textContent = username || "Inconnu";
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  localStorage.removeItem("currentUser");
-  window.location.href = "/login";
-});
-
-const colButtons = document.querySelectorAll(".col-btn");
-const info = document.querySelector(".info");
-const resetForm = document.querySelector(".reset-form");
-const boardEl = document.querySelector(".board");
-
-// --- Fonction pour reconstruire le plateau après chaque coup ---
-function renderBoard(board) {
-  boardEl.innerHTML = "";
-  board.forEach(row => {
-    const rowDiv = document.createElement("div");
-    rowDiv.className = "row";
-    row.forEach(val => {
-      const cellDiv = document.createElement("div");
-      cellDiv.className = "cell";
-      const holeDiv = document.createElement("div");
-      holeDiv.className = "hole " + (val === 0 ? "empty" : val === 1 ? "p1" : "p2");
-      cellDiv.appendChild(holeDiv);
-      rowDiv.appendChild(cellDiv);
-    });
-    boardEl.appendChild(rowDiv);
+  // Logout
+  document.getElementById("logoutBtn").addEventListener("click", async () => {
+    try {
+      await fetch("/logout", { method: "POST" });
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+      window.location.href = "/login";
+    }
   });
-}
 
-// --- AJAX pour jouer ---
-colButtons.forEach(btn => {
-  btn.addEventListener("click", async e => {
+  // DOM éléments
+  const colButtons = document.querySelectorAll(".col-btn");
+  const info = document.querySelector(".info");
+  const resetForm = document.querySelector(".reset-form");
+  const boardEl = document.querySelector(".board");
+
+  function renderBoard(board) {
+    boardEl.innerHTML = "";
+    if (!board || board.length === 0) {
+      // Grille vide par défaut
+      for (let row = 0; row < 6; row++) {
+        const rowDiv = document.createElement("div");
+        rowDiv.className = "row";
+        for (let col = 0; col < 7; col++) {
+          const cellDiv = document.createElement("div");
+          cellDiv.className = "cell";
+          const holeDiv = document.createElement("div");
+          holeDiv.className = "hole empty";
+          cellDiv.appendChild(holeDiv);
+          rowDiv.appendChild(cellDiv);
+        }
+        boardEl.appendChild(rowDiv);
+      }
+      return;
+    }
+    
+    board.forEach(row => {
+      const rowDiv = document.createElement("div");
+      rowDiv.className = "row";
+      row.forEach(val => {
+        const cellDiv = document.createElement("div");
+        cellDiv.className = "cell";
+        const holeDiv = document.createElement("div");
+        holeDiv.className = "hole " + (val === 0 ? "empty" : val === 1 ? "p1" : "p2");
+        cellDiv.appendChild(holeDiv);
+        rowDiv.appendChild(cellDiv);
+      });
+      boardEl.appendChild(rowDiv);
+    });
+  }
+
+  // Jouer
+  colButtons.forEach(btn => {
+    btn.addEventListener("click", async e => {
+      e.preventDefault();
+      const col = btn.value;
+      const formData = new FormData();
+      formData.append("col", col);
+      const res = await fetch("/play", { method: "POST", body: formData });
+      const data = await res.json();
+      renderBoard(data.board);
+      info.textContent = data.over ? data.message : `Tour du joueur ${data.currentPlayer}`;
+    });
+  });
+
+  // Reset
+  resetForm.addEventListener("submit", async e => {
     e.preventDefault();
-    const col = btn.value;
-    const formData = new FormData();
-    formData.append("col", col);
-    const res = await fetch("/play", { method: "POST", body: formData });
+    const res = await fetch("/reset", { method: "POST" });
     const data = await res.json();
     renderBoard(data.board);
-    info.textContent = data.over ? data.message : `Tour du joueur ${data.currentPlayer}`;
+    info.textContent = `Tour du joueur ${data.currentPlayer}`;
   });
-});
 
-// --- AJAX pour reset ---
-resetForm.addEventListener("submit", async e => {
-  e.preventDefault();
-  const res = await fetch("/reset", { method: "POST" });
-  const data = await res.json();
-  renderBoard(data.board);
-  info.textContent = `Tour du joueur ${data.currentPlayer}`;
-});
+  // Initialiser la grille au chargement
+  renderBoard(null); // Affiche une grille vide
+  info.textContent = "Cliquez sur une colonne pour jouer !";
+}
 
-// --- Musique ---
+// Musique
 const audio = document.getElementById('bgMusic');
 const playPauseBtn = document.getElementById('playPauseBtn');
 const nextBtn = document.getElementById('nextBtn');
 document.addEventListener('DOMContentLoaded',()=>{audio.volume=0.5;});
 playPauseBtn.addEventListener('click',()=>{if(audio.paused){audio.play();playPauseBtn.textContent='⏸';}else{audio.pause();playPauseBtn.textContent='▶️';}});
 nextBtn.addEventListener('click',()=>{audio.currentTime=0;audio.play();playPauseBtn.textContent='⏸';});
+
+// Lance l'init après DOM chargé
+document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>

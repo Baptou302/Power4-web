@@ -1,43 +1,28 @@
 package game
 
 import (
-	"database/sql"
+	"html/template"
 	"net/http"
-
-	"github.com/gorilla/sessions"
-	"golang.org/x/crypto/bcrypt"
+	"path/filepath"
 )
 
-var store = sessions.NewCookieStore([]byte("secret-key"))
-var db *sql.DB
-
 // URL: /login
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
-		var hashedPassword string
-		err := db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&hashedPassword)
+		err := ValidateUser(username, password)
 		if err != nil {
-			http.Error(w, "Utilisateur introuvable", http.StatusUnauthorized)
+			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
 
-		// Compare hash
-		err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-		if err != nil {
-			http.Error(w, "Mot de passe incorrect", http.StatusUnauthorized)
-			return
-		}
-
-		session, _ := store.Get(r, "session")
-		session.Values["username"] = username
-		session.Save(r, w)
-
+		CreateSession(w, username)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
-	http.ServeFile(w, r, "templates/login.html")
+	tmpl, _ := template.ParseFiles(filepath.Join("templates", "login.html"))
+	tmpl.Execute(w, nil)
 }
