@@ -164,7 +164,6 @@ async function init() {
     });
   });
 
-  // Reset
   resetForm.addEventListener("submit", async e => {
     e.preventDefault();
     const res = await fetch("/reset", { method: "POST" });
@@ -173,12 +172,10 @@ async function init() {
     info.textContent = `Tour du joueur ${data.currentPlayer}`;
   });
 
-  // Initialiser la grille au chargement
-  renderBoard(null); // Affiche une grille vide
+  renderBoard(null); 
   info.textContent = "Cliquez sur une colonne pour jouer !";
 }
 
-// Musique
 const audio = document.getElementById('bgMusic');
 const playPauseBtn = document.getElementById('playPauseBtn');
 const nextBtn = document.getElementById('nextBtn');
@@ -186,7 +183,6 @@ document.addEventListener('DOMContentLoaded',()=>{audio.volume=0.5;});
 playPauseBtn.addEventListener('click',()=>{if(audio.paused){audio.play();playPauseBtn.textContent='⏸';}else{audio.pause();playPauseBtn.textContent='▶️';}});
 nextBtn.addEventListener('click',()=>{audio.currentTime=0;audio.play();playPauseBtn.textContent='⏸';});
 
-// Lance l'init après DOM chargé
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>

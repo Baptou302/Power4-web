@@ -12,23 +12,20 @@ import (
 
 var DB *sql.DB
 
-// ConnectDB initialise la connexion à MySQL
 func ConnectDB() {
 	var err error
-	// Remplace "root:password@tcp(localhost:3306)/power4web" par tes infos
 	DB, err = sql.Open("mysql", "power4user:motdepasse@tcp(127.0.0.1:3306)/power4web")
 	if err != nil {
-		log.Fatal("❌ Impossible de se connecter à MySQL:", err)
+		log.Fatal(" Impossible de se connecter à MySQL:", err)
 	}
 
 	err = DB.Ping()
 	if err != nil {
-		log.Fatal("❌ Impossible de ping MySQL:", err)
+		log.Fatal("Impossible de ping MySQL:", err)
 	}
 
 	fmt.Println("✅ Connexion MySQL OK")
 
-	// Création table users si elle n'existe pas
 	createTable := `
 	CREATE TABLE IF NOT EXISTS users (
 		id INT AUTO_INCREMENT PRIMARY KEY,
@@ -38,11 +35,10 @@ func ConnectDB() {
 	`
 	_, err = DB.Exec(createTable)
 	if err != nil {
-		log.Fatal("❌ Erreur création table users:", err)
+		log.Fatal(" Erreur création table users:", err)
 	}
 }
 
-// IsUsernameTaken vérifie si le pseudo existe déjà
 func IsUsernameTaken(username string) (bool, error) {
 	var exists bool
 	err := DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)", username).Scan(&exists)
@@ -52,7 +48,6 @@ func IsUsernameTaken(username string) (bool, error) {
 	return exists, nil
 }
 
-// RegisterUser enregistre un nouvel utilisateur
 func RegisterUser(username, password string) error {
 	if DB == nil {
 		return errors.New("DB non initialisée")
@@ -74,7 +69,6 @@ func RegisterUser(username, password string) error {
 	return nil
 }
 
-// ValidateUser vérifie les identifiants
 func ValidateUser(username, password string) error {
 	if DB == nil {
 		return fmt.Errorf("DB non initialisée")
@@ -87,7 +81,6 @@ func ValidateUser(username, password string) error {
 		return fmt.Errorf("Utilisateur non trouvé")
 	}
 
-	// Compare le mot de passe saisi avec le hash stocké
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err != nil {
 		return fmt.Errorf("Mot de passe incorrect")
