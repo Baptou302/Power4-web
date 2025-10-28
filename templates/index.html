@@ -94,16 +94,7 @@
   </div>
 
   <div class="game-area">
-    <form class="col-choices" action="/play" method="post">
-      <button class="col-btn" name="col" value="0"></button>
-      <button class="col-btn" name="col" value="1"></button>
-      <button class="col-btn" name="col" value="2"></button>
-      <button class="col-btn" name="col" value="3"></button>
-      <button class="col-btn" name="col" value="4"></button>
-      <button class="col-btn" name="col" value="5"></button>
-      <button class="col-btn" name="col" value="6"></button>
-    </form>
-
+    <form class="col-choices" action="/play" method="post"></form>
     <div class="board"></div>
   </div>
 
@@ -133,6 +124,7 @@
 // Variables globales
 let currentMode = 'human';
 let selectedDifficulty = 'easy';
+let selectedHumanDifficulty = 'normal';
 
 // Fonction pour obtenir le nom de la difficulté
 function getDifficultyName(diff) {
@@ -185,7 +177,7 @@ async function init() {
     }
   });
 
-  const colButtons = document.querySelectorAll(".col-btn");
+  const colChoicesForm = document.querySelector('.col-choices');
   const info = document.querySelector(".info");
   const resetForm = document.querySelector(".reset-form");
   const boardEl = document.querySelector(".board");
@@ -232,8 +224,10 @@ async function init() {
     });
   }
 
-  colButtons.forEach(btn => {
-    btn.addEventListener("click", async e => {
+  function bindColButtons() {
+    const colButtons = document.querySelectorAll('.col-btn');
+    colButtons.forEach(btn => {
+      btn.addEventListener("click", async e => {
       e.preventDefault();
       e.stopPropagation();
       
@@ -268,12 +262,13 @@ async function init() {
         } else {
           info.textContent = `Tour du joueur ${data.currentPlayer}`;
         }
-      } catch (error) {
-        console.error("Erreur lors du jeu:", error);
-        info.textContent = "Erreur de connexion";
-      }
+        } catch (error) {
+          console.error("Erreur lors du jeu:", error);
+          info.textContent = "Erreur de connexion";
+        }
+      });
     });
-  });
+  }
 
   resetForm.addEventListener("submit", async e => {
     e.preventDefault();
@@ -322,6 +317,19 @@ async function init() {
           const data = await res.json();
           renderBoard(data.board);
           info.textContent = `Tour du joueur ${data.currentPlayer}`;
+          // Créer dynamiquement les boutons de colonnes selon la taille actuelle
+          if (Array.isArray(data.board) && data.board.length > 0) {
+            const cols = data.board[0].length;
+            colChoicesForm.innerHTML = '';
+            for (let c = 0; c < cols; c++) {
+              const b = document.createElement('button');
+              b.className = 'col-btn';
+              b.name = 'col';
+              b.value = String(c);
+              colChoicesForm.appendChild(b);
+            }
+            bindColButtons();
+          }
         } else {
           console.error('Erreur serveur:', res.status);
           info.textContent = 'Erreur lors de la réinitialisation';

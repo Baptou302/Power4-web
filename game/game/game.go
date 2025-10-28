@@ -21,6 +21,7 @@ type Game struct {
 	Turn       int
 	GravityUp  bool
 	Mutex      sync.Mutex
+	WinLength  int
 	// Mode IA
 	IsAIMode     bool
 	AIDifficulty string
@@ -40,6 +41,7 @@ func newGame(rows, cols int) *Game {
 		Board:     board,
 		Current:   1,
 		GravityUp: false,
+		WinLength: 4,
 		IsAIMode:  false,
 	}
 }
@@ -48,7 +50,7 @@ func newAIGame(rows, cols int, difficulty string) *Game {
 	game := newGame(rows, cols)
 	game.IsAIMode = true
 	game.AIDifficulty = difficulty
-	game.AI = NewAI(difficulty, 2) // L'IA est toujours le joueur 2
+	game.AI = NewAI(difficulty, 2)
 	return game
 }
 
@@ -59,27 +61,38 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Vérifier si un mode est spécifié dans l'URL
 	mode := r.URL.Query().Get("mode")
 	difficulty := r.URL.Query().Get("difficulty")
 
 	if mode == "" {
-		// Aucun mode spécifié, rediriger vers la page de sélection
 		http.Redirect(w, r, "/mode-selection", http.StatusSeeOther)
 		return
 	}
 
-	// Initialiser le jeu selon le mode
 	if mode == "ai" && difficulty != "" {
 		if currentGame == nil || !currentGame.IsAIMode || currentGame.AIDifficulty != difficulty {
 			currentGame = newAIGame(6, 7, difficulty)
 		}
 	} else if mode == "human" {
-		if currentGame == nil || currentGame.IsAIMode {
-			currentGame = newGame(6, 7)
+		// Difficultés locales: easy (6x7, win 3), normal (6x7, win 4), hard (7x8, win 7)
+		hd := difficulty
+		if hd == "" {
+			hd = r.URL.Query().Get("hdifficulty")
+		}
+		if currentGame == nil || currentGame.IsAIMode || hd != "" {
+			switch hd {
+			case "easy":
+				currentGame = newGame(6, 7)
+				currentGame.WinLength = 3
+			case "hard":
+				currentGame = newGame(7, 8)
+				currentGame.WinLength = 7
+			default:
+				currentGame = newGame(6, 7)
+				currentGame.WinLength = 4
+			}
 		}
 	} else {
-		// Mode invalide, rediriger vers la sélection
 		http.Redirect(w, r, "/mode-selection", http.StatusSeeOther)
 		return
 	}
@@ -113,6 +126,7 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
 		"Cols":          currentGame.Cols,
 		"Gravity":       currentGame.GravityUp,
 		"Username":      user,
+		"WinLength":     currentGame.WinLength,
 	}
 
 	tmpl.Execute(w, data)
@@ -146,11 +160,10 @@ func HandlePlay(w http.ResponseWriter, r *http.Request) {
 
 	placeToken(col)
 
-	// Si c'est le tour de l'IA et qu'on est en mode IA et que la partie n'est pas finie
 	if currentGame.IsAIMode && currentGame.Current == 2 && !currentGame.Over {
 		aiCol := currentGame.AI.PlayMove(currentGame)
 		if aiCol != -1 {
-			placeToken(aiCol) // L'IA joue automatiquement
+			placeToken(aiCol)
 		}
 	}
 
@@ -171,7 +184,19 @@ func HandleReset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentGame = newGame(6, 7)
+	if currentGame == nil {
+		currentGame = newGame(6, 7)
+	} else {
+		if currentGame.IsAIMode {
+			// Redémarre une partie IA avec les mêmes paramètres
+			currentGame = newAIGame(6, 7, currentGame.AIDifficulty)
+		} else {
+			// Redémarre une partie locale avec la même taille et condition de victoire
+			g := newGame(currentGame.Rows, currentGame.Cols)
+			g.WinLength = currentGame.WinLength
+			currentGame = g
+		}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, `{
@@ -229,7 +254,7 @@ func placeToken(col int) {
 
 	g.Turn++
 
-	if checkWin(g.Board, g.Current) {
+	if checkWin(g.Board, g.Current, g.WinLength) {
 		g.Over = true
 		if g.IsAIMode && g.Current == 2 {
 			g.Message = "L'IA gagne ! 🤖"
@@ -250,38 +275,69 @@ func placeToken(col int) {
 	g.Current = 3 - g.Current
 }
 
-func checkWin(board [][]int, player int) bool {
+func checkWin(board [][]int, player int, winLen int) bool {
 	rows := len(board)
 	cols := len(board[0])
 
+	// Horizontal
 	for r := 0; r < rows; r++ {
-		for c := 0; c < cols-3; c++ {
-			if board[r][c] == player && board[r][c+1] == player &&
-				board[r][c+2] == player && board[r][c+3] == player {
+		for c := 0; c <= cols-winLen; c++ {
+			ok := true
+			for i := 0; i < winLen; i++ {
+				if board[r][c+i] != player {
+					ok = false
+					break
+				}
+			}
+			if ok {
 				return true
 			}
 		}
 	}
 
-	for r := 0; r < rows-3; r++ {
+	// Vertical
+	for r := 0; r <= rows-winLen; r++ {
 		for c := 0; c < cols; c++ {
-			if board[r][c] == player && board[r+1][c] == player &&
-				board[r+2][c] == player && board[r+3][c] == player {
+			ok := true
+			for i := 0; i < winLen; i++ {
+				if board[r+i][c] != player {
+					ok = false
+					break
+				}
+			}
+			if ok {
 				return true
 			}
 		}
 	}
 
-	for r := 0; r < rows-3; r++ {
-		for c := 0; c < cols-3; c++ {
-			if board[r][c] == player && board[r+1][c+1] == player &&
-				board[r+2][c+2] == player && board[r+3][c+3] == player {
+	// Diagonal down-right
+	for r := 0; r <= rows-winLen; r++ {
+		for c := 0; c <= cols-winLen; c++ {
+			ok := true
+			for i := 0; i < winLen; i++ {
+				if board[r+i][c+i] != player {
+					ok = false
+					break
+				}
+			}
+			if ok {
 				return true
 			}
 		}
-		for c := 3; c < cols; c++ {
-			if board[r][c] == player && board[r+1][c-1] == player &&
-				board[r+2][c-2] == player && board[r+3][c-3] == player {
+	}
+
+	// Diagonal up-right
+	for r := 0; r <= rows-winLen; r++ {
+		for c := winLen - 1; c < cols; c++ {
+			ok := true
+			for i := 0; i < winLen; i++ {
+				if board[r+i][c-i] != player {
+					ok = false
+					break
+				}
+			}
+			if ok {
 				return true
 			}
 		}
@@ -316,7 +372,6 @@ func HandleWhoami(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `{"username": "%s"}`, username)
 }
 
-// Page de sélection de mode
 func HandleModeSelection(w http.ResponseWriter, r *http.Request) {
 	user := GetUsernameFromRequest(r)
 	if user == "" {
@@ -333,7 +388,6 @@ func HandleModeSelection(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, nil)
 }
 
-// Page de test
 func HandleTest(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles(filepath.Join("templates", "test-login.html"))
 	if err != nil {
@@ -344,7 +398,6 @@ func HandleTest(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, nil)
 }
 
-// Nouveau jeu contre l'IA
 func HandleNewAIGame(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
@@ -362,7 +415,6 @@ func HandleNewAIGame(w http.ResponseWriter, r *http.Request) {
 		difficulty = DifficultyEasy
 	}
 
-	// Valider la difficulté
 	if difficulty != DifficultyEasy && difficulty != DifficultyMedium && difficulty != DifficultyHard {
 		http.Error(w, "Difficulté invalide", http.StatusBadRequest)
 		return

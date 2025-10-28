@@ -186,6 +186,14 @@
         <div class="mode-icon">👥</div>
         <h3>2 Joueurs</h3>
         <p>Affrontez un ami en local</p>
+        <div class="difficulty-selector" id="humanDifficultySelector">
+          <h4>Choisissez la difficulté (local) :</h4>
+          <div class="difficulty-buttons">
+            <button class="difficulty-btn" data-hdifficulty="easy">🟢 Facile (6x7, 3 alignés)</button>
+            <button class="difficulty-btn selected" data-hdifficulty="normal">🟡 Normal (6x7, 4 alignés)</button>
+            <button class="difficulty-btn" data-hdifficulty="hard">🔴 Difficile (7x8, 7 alignés)</button>
+          </div>
+        </div>
       </div>
       
       <div class="mode-card" id="vsAICard">
@@ -210,6 +218,7 @@
   <script>
     let selectedMode = null;
     let selectedDifficulty = 'easy';
+    let selectedHumanDifficulty = 'normal';
 
     // Récupérer les informations utilisateur
     async function init() {
@@ -249,6 +258,7 @@
       document.getElementById('vsHumanCard').style.borderColor = '#4CAF50';
       document.getElementById('vsAICard').style.borderColor = '#e0e0e0';
       document.getElementById('difficultySelector').style.display = 'none';
+      document.getElementById('humanDifficultySelector').style.display = 'block';
       document.getElementById('startBtn').disabled = false;
     });
 
@@ -258,15 +268,23 @@
       document.getElementById('vsAICard').style.borderColor = '#4CAF50';
       document.getElementById('vsHumanCard').style.borderColor = '#e0e0e0';
       document.getElementById('difficultySelector').style.display = 'block';
+      document.getElementById('humanDifficultySelector').style.display = 'none';
       document.getElementById('startBtn').disabled = false;
     });
 
-    // Sélection de la difficulté
+    // Sélection de la difficulté IA
     document.querySelectorAll('.difficulty-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        selectedDifficulty = btn.dataset.difficulty;
+        const isHuman = btn.hasAttribute('data-hdifficulty');
+        if (isHuman) {
+          document.querySelectorAll('#humanDifficultySelector .difficulty-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedHumanDifficulty = btn.dataset.hdifficulty;
+        } else {
+          document.querySelectorAll('#difficultySelector .difficulty-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedDifficulty = btn.dataset.difficulty;
+        }
       });
     });
 
@@ -276,8 +294,8 @@
         // Mode IA - rediriger vers la page de jeu avec la difficulté
         window.location.href = `/?mode=ai&difficulty=${selectedDifficulty}`;
       } else {
-        // Mode 2 joueurs - rediriger vers la page de jeu normale
-        window.location.href = '/?mode=human';
+        // Mode 2 joueurs - rediriger avec difficulté locale
+        window.location.href = `/?mode=human&hdifficulty=${selectedHumanDifficulty}`;
       }
     });
 
