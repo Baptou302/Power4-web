@@ -415,7 +415,7 @@ func HandleNewAIGame(w http.ResponseWriter, r *http.Request) {
 		difficulty = DifficultyEasy
 	}
 
-	if difficulty != DifficultyEasy && difficulty != DifficultyMedium && difficulty != DifficultyHard {
+	if difficulty != DifficultyEasy && difficulty != DifficultyMedium && difficulty != DifficultyHard && difficulty != DifficultyImpossible {
 		http.Error(w, "Difficulté invalide", http.StatusBadRequest)
 		return
 	}

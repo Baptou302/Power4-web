@@ -132,6 +132,7 @@ function getDifficultyName(diff) {
     case 'easy': return 'Facile';
     case 'medium': return 'Intermédiaire';
     case 'hard': return 'Hardcore';
+    case 'impossible': return '💀 Impossible';
     default: return 'Facile';
   }
 }
@@ -205,10 +206,25 @@ async function init() {
         }
         boardEl.appendChild(rowDiv);
       }
+      // Ajuste les dimensions par défaut
+      const cols = 7, rows = 6;
+      const width = cols*80 + (cols-1)*8 + 36; // cells + gaps + paddings
+      const height = rows*80 + (rows-1)*8 + 36;
+      boardEl.style.width = width + 'px';
+      boardEl.style.height = height + 'px';
+      colChoicesForm.style.width = width + 'px';
       return;
     }
     
     // Afficher le plateau reçu du serveur
+    const rows = board.length;
+    const cols = board[0].length;
+    const width = cols*80 + (cols-1)*8 + 36;
+    const height = rows*80 + (rows-1)*8 + 36;
+    boardEl.style.width = width + 'px';
+    boardEl.style.height = height + 'px';
+    colChoicesForm.style.width = width + 'px';
+
     board.forEach(row => {
       const rowDiv = document.createElement("div");
       rowDiv.className = "row";
@@ -222,6 +238,19 @@ async function init() {
       });
       boardEl.appendChild(rowDiv);
     });
+
+    // Recrée les boutons de colonnes si nécessaire
+    if (!colChoicesForm.querySelector('.col-btn') || colChoicesForm.querySelectorAll('.col-btn').length !== cols) {
+      colChoicesForm.innerHTML = '';
+      for (let c = 0; c < cols; c++) {
+        const b = document.createElement('button');
+        b.className = 'col-btn';
+        b.name = 'col';
+        b.value = String(c);
+        colChoicesForm.appendChild(b);
+      }
+      bindColButtons();
+    }
   }
 
   function bindColButtons() {

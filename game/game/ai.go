@@ -1,14 +1,16 @@
 package game
 
 import (
+	"math"
 	"math/rand"
 	"time"
 )
 
 const (
-	DifficultyEasy   = "easy"
-	DifficultyMedium = "medium"
-	DifficultyHard   = "hard"
+	DifficultyEasy       = "easy"
+	DifficultyMedium     = "medium"
+	DifficultyHard       = "hard"
+	DifficultyImpossible = "impossible"
 )
 
 type AI struct {
@@ -31,6 +33,8 @@ func (ai *AI) PlayMove(game *Game) int {
 		return ai.playMedium(game)
 	case DifficultyHard:
 		return ai.playHard(game)
+	case DifficultyImpossible:
+		return ai.playImpossible(game)
 	default:
 		return ai.playEasy(game)
 	}
@@ -73,26 +77,74 @@ func (ai *AI) playHard(game *Game) int {
 	if winCol != -1 {
 		return winCol
 	}
-
 	opponent := 3 - ai.Player
 	blockCol := ai.findWinningMove(game, opponent)
 	if blockCol != -1 {
 		return blockCol
 	}
 
-	bestCol := ai.minimax(game, 4, true)
+	bestCol := ai.minimaxBestMove(game, 4)
 	if bestCol != -1 && ai.isValidMove(game, bestCol) {
 		return bestCol
 	}
 
-	centerCols := []int{3, 2, 4, 1, 5, 0, 6}
-	for _, col := range centerCols {
+	order := ai.centerOrder(game.Cols)
+	for _, col := range order {
+		if ai.isValidMove(game, col) {
+			return col
+		}
+	}
+	return ai.playEasy(game)
+}
+
+// playImpossible tries to be unbeatable by combining tactical checks with
+// a deeper minimax search and better move ordering.
+func (ai *AI) playImpossible(game *Game) int {
+	// 1) Win immediately if possible
+	winCol := ai.findWinningMove(game, ai.Player)
+	if winCol != -1 {
+		return winCol
+	}
+
+	// 2) Block opponent immediate win
+	opponent := 3 - ai.Player
+	blockCol := ai.findWinningMove(game, opponent)
+	if blockCol != -1 {
+		return blockCol
+	}
+
+	// 3) Deep search with improved ordering and pruning (fast + strong)
+	bestCol := ai.minimaxBestMoveAlphaBeta(game, 6) // depth 6 with pruning
+	if bestCol != -1 && ai.isValidMove(game, bestCol) {
+		return bestCol
+	}
+
+	// 4) Prefer center columns
+	order := ai.centerOrder(game.Cols)
+	for _, col := range order {
 		if ai.isValidMove(game, col) {
 			return col
 		}
 	}
 
 	return ai.playEasy(game)
+}
+
+func (ai *AI) centerOrder(cols int) []int {
+	// Returns column indices ordered from center outward
+	order := []int{}
+	centerLeft := (cols - 1) / 2
+	centerRight := cols / 2
+	used := map[int]bool{}
+	for offset := 0; offset < cols; offset++ {
+		for _, c := range []int{centerLeft - offset, centerRight + offset} {
+			if c >= 0 && c < cols && !used[c] {
+				order = append(order, c)
+				used[c] = true
+			}
+		}
+	}
+	return order
 }
 
 func (ai *AI) findWinningMove(game *Game, player int) int {
@@ -140,49 +192,154 @@ func (ai *AI) getValidColumns(game *Game) []int {
 	return validCols
 }
 
-func (ai *AI) minimax(game *Game, depth int, maximizingPlayer bool) int {
-	if depth == 0 || game.Over {
+func (ai *AI) minimaxBestMove(game *Game, depth int) int {
+	bestScore := math.MinInt
+	bestCol := -1
+	// Order columns from center outward for better pruning
+	order := ai.centerOrder(game.Cols)
+	for _, col := range order {
+		if !ai.isValidMove(game, col) {
+			continue
+		}
+		row := ai.getNextEmptyRow(game, col)
+		game.Board[row][col] = ai.Player
+		score := ai.minimaxScore(game, depth-1, false)
+		game.Board[row][col] = 0
+		if score > bestScore {
+			bestScore = score
+			bestCol = col
+		}
+	}
+	return bestCol
+}
+
+func (ai *AI) minimaxBestMoveAlphaBeta(game *Game, depth int) int {
+	bestScore := math.MinInt
+	bestCol := -1
+	alpha := math.MinInt
+	beta := math.MaxInt
+	for _, col := range ai.centerOrder(game.Cols) {
+		if !ai.isValidMove(game, col) {
+			continue
+		}
+		row := ai.getNextEmptyRow(game, col)
+		game.Board[row][col] = ai.Player
+		score := ai.minimaxScoreAlphaBeta(game, depth-1, false, alpha, beta)
+		game.Board[row][col] = 0
+		if score > bestScore {
+			bestScore = score
+			bestCol = col
+		}
+		if bestScore > alpha {
+			alpha = bestScore
+		}
+	}
+	return bestCol
+}
+
+func (ai *AI) minimaxScore(game *Game, depth int, maximizing bool) int {
+	// Terminal states
+	if checkWin(game.Board, ai.Player, 4) {
+		return 100000 - (4 - depth)
+	}
+	if checkWin(game.Board, 3-ai.Player, 4) {
+		return -100000 + (4 - depth)
+	}
+	if depth == 0 {
 		return ai.evaluateBoard(game)
 	}
 
-	validCols := ai.getValidColumns(game)
-	if len(validCols) == 0 {
+	valid := ai.getValidColumns(game)
+	if len(valid) == 0 {
 		return 0
 	}
 
-	bestCol := validCols[0]
-
-	if maximizingPlayer {
-		maxEval := -1000
-		for _, col := range validCols {
+	if maximizing {
+		best := math.MinInt
+		for _, col := range valid {
 			row := ai.getNextEmptyRow(game, col)
 			game.Board[row][col] = ai.Player
-
-			eval := ai.minimax(game, depth-1, false)
+			score := ai.minimaxScore(game, depth-1, false)
 			game.Board[row][col] = 0
-
-			if eval > maxEval {
-				maxEval = eval
-				bestCol = col
+			if score > best {
+				best = score
 			}
 		}
-		return bestCol
+		return best
 	} else {
-		minEval := 1000
-		opponent := 3 - ai.Player
-		for _, col := range validCols {
+		best := math.MaxInt
+		opp := 3 - ai.Player
+		for _, col := range valid {
 			row := ai.getNextEmptyRow(game, col)
-			game.Board[row][col] = opponent
-
-			eval := ai.minimax(game, depth-1, true)
+			game.Board[row][col] = opp
+			score := ai.minimaxScore(game, depth-1, true)
 			game.Board[row][col] = 0
-
-			if eval < minEval {
-				minEval = eval
-				bestCol = col
+			if score < best {
+				best = score
 			}
 		}
-		return bestCol
+		return best
+	}
+}
+
+func (ai *AI) minimaxScoreAlphaBeta(game *Game, depth int, maximizing bool, alpha, beta int) int {
+	// Terminal states
+	if checkWin(game.Board, ai.Player, 4) {
+		return 100000 - (4 - depth)
+	}
+	if checkWin(game.Board, 3-ai.Player, 4) {
+		return -100000 + (4 - depth)
+	}
+	if depth == 0 {
+		return ai.evaluateBoard(game)
+	}
+
+	// Order columns for better pruning
+	ordered := ai.centerOrder(game.Cols)
+
+	if maximizing {
+		best := math.MinInt
+		for _, col := range ordered {
+			if !ai.isValidMove(game, col) {
+				continue
+			}
+			row := ai.getNextEmptyRow(game, col)
+			game.Board[row][col] = ai.Player
+			score := ai.minimaxScoreAlphaBeta(game, depth-1, false, alpha, beta)
+			game.Board[row][col] = 0
+			if score > best {
+				best = score
+			}
+			if best > alpha {
+				alpha = best
+			}
+			if beta <= alpha {
+				break
+			}
+		}
+		return best
+	} else {
+		best := math.MaxInt
+		opp := 3 - ai.Player
+		for _, col := range ordered {
+			if !ai.isValidMove(game, col) {
+				continue
+			}
+			row := ai.getNextEmptyRow(game, col)
+			game.Board[row][col] = opp
+			score := ai.minimaxScoreAlphaBeta(game, depth-1, true, alpha, beta)
+			game.Board[row][col] = 0
+			if score < best {
+				best = score
+			}
+			if best < beta {
+				beta = best
+			}
+			if beta <= alpha {
+				break
+			}
+		}
+		return best
 	}
 }
 
