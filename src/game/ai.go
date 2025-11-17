@@ -94,6 +94,7 @@ func (ai *AI) playHard(game *Game) int {
 			return col
 		}
 	}
+
 	return ai.playEasy(game)
 }
 

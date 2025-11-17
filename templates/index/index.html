@@ -94,7 +94,7 @@
   </div>
 
   <div class="game-area">
-    <form class="col-choices" action="/play" method="post"></form>
+    <div class="col-choices"></div>
     <div class="board"></div>
   </div>
 
@@ -147,6 +147,17 @@ async function init() {
   const username = dataUser.username;
   document.getElementById("username").textContent = username || "Inconnu";
 
+  // Récupérer les éléments DOM d'abord
+  const colChoicesForm = document.querySelector('.col-choices');
+  const info = document.querySelector(".info");
+  const resetForm = document.querySelector(".reset-form");
+  const boardEl = document.querySelector(".board");
+
+  // Vérifier que tous les éléments sont présents
+  if (!colChoicesForm || !info || !resetForm || !boardEl) {
+    return;
+  }
+
   // Récupérer les paramètres de l'URL
   const urlParams = new URLSearchParams(window.location.search);
   const mode = urlParams.get('mode') || 'human';
@@ -157,15 +168,9 @@ async function init() {
     currentMode = 'ai';
     selectedDifficulty = difficulty;
     document.getElementById('currentModeText').textContent = `🤖 Contre l'IA (${getDifficultyName(difficulty)})`;
-    
-    // Démarrer une partie IA
-    startNewGame();
   } else {
     currentMode = 'human';
     document.getElementById('currentModeText').textContent = '👥 2 Joueurs';
-    
-    // Démarrer une partie normale
-    startNewGame();
   }
 
   document.getElementById("logoutBtn").addEventListener("click", async () => {
@@ -173,32 +178,44 @@ async function init() {
       await fetch("/logout", { method: "POST" });
       window.location.href = "/login";
     } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
       window.location.href = "/login";
     }
   });
 
-  const colChoicesForm = document.querySelector('.col-choices');
-  const info = document.querySelector(".info");
-  const resetForm = document.querySelector(".reset-form");
-  const boardEl = document.querySelector(".board");
-
   function renderBoard(board) {
     if (!boardEl) {
-      console.error("boardEl not found!");
       return;
     }
     
     boardEl.innerHTML = "";
     
+    let cols = 7, rows = 6;
+    
     if (!board || board.length === 0) {
-      // Grille vide par défaut (6x7)
-      for (let row = 0; row < 6; row++) {
+      // Déterminer les dimensions selon la difficulté
+      const urlParams = new URLSearchParams(window.location.search);
+      const hdifficulty = urlParams.get('hdifficulty') || 'normal';
+      
+      if (hdifficulty === 'easy') {
+        rows = 6;
+        cols = 7;
+      } else if (hdifficulty === 'hard') {
+        rows = 7;
+        cols = 8;
+      } else {
+        // Normal par défaut
+        rows = 6;
+        cols = 7;
+      }
+      
+      // Créer la grille avec les bonnes dimensions
+      for (let row = 0; row < rows; row++) {
         const rowDiv = document.createElement("div");
         rowDiv.className = "row";
-        for (let col = 0; col < 7; col++) {
+        for (let col = 0; col < cols; col++) {
           const cellDiv = document.createElement("div");
           cellDiv.className = "cell";
+          cellDiv.dataset.col = col; // Stocker l'index de colonne
           const holeDiv = document.createElement("div");
           holeDiv.className = "hole empty";
           cellDiv.appendChild(holeDiv);
@@ -206,121 +223,180 @@ async function init() {
         }
         boardEl.appendChild(rowDiv);
       }
-      // Ajuste les dimensions par défaut
-      const cols = 7, rows = 6;
-      const width = cols*80 + (cols-1)*8 + 36; // cells + gaps + paddings
-      const height = rows*80 + (rows-1)*8 + 36;
-      boardEl.style.width = width + 'px';
-      boardEl.style.height = height + 'px';
-      colChoicesForm.style.width = width + 'px';
-      return;
+      // Rendre les colonnes cliquables même pour le plateau vide
+      bindColumnClicks();
+    } else {
+      // Afficher le plateau reçu du serveur
+      rows = board.length;
+      cols = board[0].length;
+
+      board.forEach((row, rowIndex) => {
+        const rowDiv = document.createElement("div");
+        rowDiv.className = "row";
+        row.forEach((val, colIndex) => {
+          const cellDiv = document.createElement("div");
+          cellDiv.className = "cell";
+          cellDiv.dataset.col = colIndex; // Stocker l'index de colonne
+          const holeDiv = document.createElement("div");
+          let holeClass = "hole ";
+          if (val === 0) {
+            holeClass += "empty";
+          } else if (val === 1) {
+            holeClass += "p1";
+          } else if (val === 2) {
+            holeClass += "p2";
+          } else {
+            holeClass += "empty";
+          }
+          holeDiv.className = holeClass;
+          cellDiv.appendChild(holeDiv);
+          rowDiv.appendChild(cellDiv);
+        });
+        boardEl.appendChild(rowDiv);
+      });
+      
+      // Rendre les colonnes cliquables
+      bindColumnClicks();
     }
     
-    // Afficher le plateau reçu du serveur
-    const rows = board.length;
-    const cols = board[0].length;
+    // Ajuster les dimensions
     const width = cols*80 + (cols-1)*8 + 36;
     const height = rows*80 + (rows-1)*8 + 36;
     boardEl.style.width = width + 'px';
     boardEl.style.height = height + 'px';
     colChoicesForm.style.width = width + 'px';
+    colChoicesForm.style.height = '50px';
+    colChoicesForm.style.top = '-60px'; // Positionner les boutons au-dessus du plateau
+    colChoicesForm.style.pointerEvents = 'auto'; // S'assurer que les clics fonctionnent
 
-    board.forEach(row => {
-      const rowDiv = document.createElement("div");
-      rowDiv.className = "row";
-      row.forEach(val => {
-        const cellDiv = document.createElement("div");
-        cellDiv.className = "cell";
-        const holeDiv = document.createElement("div");
-        holeDiv.className = "hole " + (val === 0 ? "empty" : val === 1 ? "p1" : "p2");
-        cellDiv.appendChild(holeDiv);
-        rowDiv.appendChild(cellDiv);
-      });
-      boardEl.appendChild(rowDiv);
-    });
-
-    // Recrée les boutons de colonnes si nécessaire
-    if (!colChoicesForm.querySelector('.col-btn') || colChoicesForm.querySelectorAll('.col-btn').length !== cols) {
-      colChoicesForm.innerHTML = '';
-      for (let c = 0; c < cols; c++) {
-        const b = document.createElement('button');
-        b.className = 'col-btn';
-        b.name = 'col';
-        b.value = String(c);
-        colChoicesForm.appendChild(b);
-      }
-      bindColButtons();
+    // Les boutons ne sont plus nécessaires, on clique directement sur le plateau
+    if (colChoicesForm) {
+      colChoicesForm.style.display = 'none'; // Cacher les boutons
     }
   }
 
-  function bindColButtons() {
-    const colButtons = document.querySelectorAll('.col-btn');
-    colButtons.forEach(btn => {
-      btn.addEventListener("click", async e => {
-      e.preventDefault();
-      e.stopPropagation();
+  // Fonction pour jouer un coup (utilisée par les colonnes)
+  async function playMove(col) {
+    const colNum = parseInt(col, 10);
+    
+    if (isNaN(colNum) || colNum < 0) {
+      return;
+    }
+    
+    // Mettre à jour le message
+    info.textContent = "Envoi du coup...";
+    
+    try {
+      const params = new URLSearchParams();
+      params.append("col", String(colNum));
       
-      const col = btn.value;
-      console.log("Clic sur la colonne:", col);
-      
-      try {
-        const formData = new FormData();
-        formData.append("col", col);
-        const res = await fetch("/play", { method: "POST", body: formData });
-        
-        if (!res.ok) {
-          console.error("Erreur serveur:", res.status);
-          info.textContent = "Erreur lors du jeu";
-          return;
-        }
-        
-        const data = await res.json();
-        console.log("Réponse du serveur:", data);
-        
-        // Mettre à jour le plateau
-        renderBoard(data.board);
-        
-        if (data.over) {
-          info.textContent = data.message;
-        } else if (currentMode === 'ai') {
-          if (data.currentPlayer === 1) {
-            info.textContent = "Votre tour !";
-          } else {
-            info.textContent = "L'IA réfléchit...";
-          }
-        } else {
-          info.textContent = `Tour du joueur ${data.currentPlayer}`;
-        }
-        } catch (error) {
-          console.error("Erreur lors du jeu:", error);
-          info.textContent = "Erreur de connexion";
-        }
+      const res = await fetch("/play", { 
+        method: "POST", 
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params.toString(),
+        credentials: 'include'
       });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        info.textContent = "Erreur: " + errorText;
+        return;
+      }
+      
+      const data = await res.json();
+      
+      // Vérifier que le plateau est valide
+      if (!data.board || !Array.isArray(data.board)) {
+        info.textContent = "Erreur: plateau invalide reçu";
+        return;
+      }
+      
+      // Mettre à jour le plateau
+      renderBoard(data.board);
+      
+      // Mettre à jour le message
+      if (data.over) {
+        info.textContent = data.message || "Partie terminée";
+      } else if (currentMode === 'ai' || data.isAIMode) {
+        // En mode IA, le joueur est toujours 1, l'IA est 2
+        if (data.currentPlayer === 1) {
+          info.textContent = "Votre tour !";
+        } else {
+          info.textContent = "L'IA réfléchit...";
+        }
+      } else {
+        info.textContent = `Tour du joueur ${data.currentPlayer}`;
+      }
+    } catch (error) {
+      info.textContent = "Erreur de connexion";
+    }
+  }
+  
+  // Rendre les colonnes du plateau cliquables
+  function bindColumnClicks() {
+    if (!boardEl) return;
+    
+    const cells = boardEl.querySelectorAll('.cell');
+    cells.forEach(cell => {
+      const col = cell.dataset.col;
+      if (col !== undefined) {
+        cell.style.cursor = 'pointer';
+        cell.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          playMove(col);
+        };
+      }
     });
   }
+  
 
   resetForm.addEventListener("submit", async e => {
     e.preventDefault();
-    const res = await fetch("/reset", { method: "POST" });
+    
+    // Récupérer la difficulté actuelle depuis l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const hdifficulty = urlParams.get('hdifficulty') || 'normal';
+    
+    // Utiliser URLSearchParams pour être sûr que ça fonctionne
+    const params = new URLSearchParams();
+    params.append('hdifficulty', hdifficulty);
+    
+    const res = await fetch("/reset", { 
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString()
+    });
     const data = await res.json();
     renderBoard(data.board);
-    info.textContent = `Tour du joueur ${data.currentPlayer}`;
+    
+    // Afficher les informations de la partie
+    let difficultyText = '';
+    if (hdifficulty === 'easy') {
+      difficultyText = ' (Facile: 6x7, 3 alignés)';
+    } else if (hdifficulty === 'hard') {
+      difficultyText = ' (Difficile: 7x8, 7 alignés)';
+    } else {
+      difficultyText = ' (Normal: 6x7, 4 alignés)';
+    }
+    
+    info.textContent = `Tour du joueur ${data.currentPlayer}${difficultyText}`;
   });
 
   // Bouton de changement de mode
   document.getElementById('changeModeBtn').addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("Changement de mode demandé");
     window.location.href = '/mode-selection';
   });
 
-  // Initialiser la grille vide après que les éléments DOM soient disponibles
-  renderBoard(null); 
-  info.textContent = "Chargement...";
-
   // Fonction pour démarrer une nouvelle partie
   async function startNewGame() {
+    info.textContent = "Chargement...";
     if (currentMode === 'ai') {
       try {
         const formData = new FormData();
@@ -329,46 +405,60 @@ async function init() {
         if (res.ok) {
           const data = await res.json();
           renderBoard(data.board);
-          info.textContent = data.message;
+          info.textContent = data.message || "Partie contre l'IA démarrée !";
         } else {
-          console.error('Erreur serveur:', res.status);
+          const errorText = await res.text();
           info.textContent = 'Erreur lors du démarrage de la partie IA';
         }
       } catch (error) {
-        console.error('Erreur lors du démarrage de la partie IA:', error);
         info.textContent = 'Erreur lors du démarrage de la partie';
       }
     } else {
-      // Mode 2 joueurs - réinitialiser la partie normale
+      // Mode 2 joueurs - créer une nouvelle partie avec la difficulté choisie
       try {
-        const res = await fetch('/reset', { method: 'POST' });
+        const urlParams = new URLSearchParams(window.location.search);
+        const hdifficulty = urlParams.get('hdifficulty') || 'normal';
+        
+        // Utiliser URLSearchParams au lieu de FormData pour être sûr que ça fonctionne
+        const params = new URLSearchParams();
+        params.append('hdifficulty', hdifficulty);
+        
+        // Toujours créer un nouveau jeu avec la bonne difficulté
+        const res = await fetch('/reset', { 
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: params.toString()
+        });
         if (res.ok) {
           const data = await res.json();
-          renderBoard(data.board);
-          info.textContent = `Tour du joueur ${data.currentPlayer}`;
-          // Créer dynamiquement les boutons de colonnes selon la taille actuelle
-          if (Array.isArray(data.board) && data.board.length > 0) {
-            const cols = data.board[0].length;
-            colChoicesForm.innerHTML = '';
-            for (let c = 0; c < cols; c++) {
-              const b = document.createElement('button');
-              b.className = 'col-btn';
-              b.name = 'col';
-              b.value = String(c);
-              colChoicesForm.appendChild(b);
-            }
-            bindColButtons();
+          
+          // Afficher les informations de la partie
+          let difficultyText = '';
+          if (hdifficulty === 'easy') {
+            difficultyText = ' (Facile: 6x7, 3 alignés)';
+          } else if (hdifficulty === 'hard') {
+            difficultyText = ' (Difficile: 7x8, 7 alignés)';
+          } else {
+            difficultyText = ' (Normal: 6x7, 4 alignés)';
           }
+          
+          // Rendre le plateau avec les bonnes dimensions depuis le serveur
+          renderBoard(data.board);
+          info.textContent = `Tour du joueur ${data.currentPlayer}${difficultyText}`;
         } else {
-          console.error('Erreur serveur:', res.status);
-          info.textContent = 'Erreur lors de la réinitialisation';
+          const errorText = await res.text();
+          info.textContent = 'Erreur lors de la réinitialisation: ' + errorText;
         }
       } catch (error) {
-        console.error('Erreur lors de la réinitialisation:', error);
         info.textContent = 'Erreur lors de la réinitialisation';
       }
     }
   }
+
+  // Démarrer une partie après l'initialisation (ne pas créer de plateau vide avant)
+  startNewGame();
 }
 
 const audio = document.getElementById('bgMusic');
