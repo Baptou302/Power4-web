@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"power4/src/models"
+	"power4/src/logger"
 )
 
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
@@ -32,6 +33,9 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Erreur lors de la création de la session", http.StatusInternalServerError)
 			return
 		}
+
+		// Logger la connexion
+		logger.LogLogin(username, user.Role)
 
 		http.Redirect(w, r, "/mode-selection", http.StatusSeeOther)
 		return

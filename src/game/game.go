@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"power4/src/auth"
+	"power4/src/logger"
 	"strconv"
 	"sync"
 )
@@ -222,10 +224,49 @@ func HandlePlay(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Récupérer le nom d'utilisateur pour les logs
+	username := auth.GetUsernameFromRequest(r)
+	if username == "" {
+		username = "Inconnu"
+	}
+
 	// Placer le jeton du joueur
+	wasOver := currentGame.Over
 	if !placeToken(currentGame, col) {
 		http.Error(w, "Coup invalide - colonne pleine", http.StatusBadRequest)
 		return
+	}
+
+	// Logger si la partie vient de se terminer (après le coup du joueur)
+	if !wasOver && currentGame.Over {
+		mode := "2 Joueurs"
+		difficulty := ""
+		if currentGame.IsAIMode {
+			mode = "IA"
+			difficulty = currentGame.AIDifficulty
+		}
+
+		// Déterminer le résultat pour le joueur
+		if currentGame.Message == "Match nul !" {
+			logger.LogGameDraw(username, mode, difficulty, currentGame.IsAIMode)
+		} else if currentGame.IsAIMode {
+			// En mode IA, le joueur 1 est toujours l'utilisateur
+			// Si currentGame.Current == 1 après placeToken, c'est que le joueur a gagné
+			// (car placeToken ne change pas Current si la partie est terminée)
+			if currentGame.Current == 1 {
+				logger.LogGameWin(username, mode, difficulty, currentGame.IsAIMode)
+			} else {
+				// L'IA a gagné, donc le joueur a perdu
+				logger.LogGameLoss(username, mode, difficulty, currentGame.IsAIMode)
+			}
+		} else {
+			// Mode 2 joueurs - on suppose que le joueur connecté est le joueur 1
+			if currentGame.Current == 1 {
+				logger.LogGameWin(username, mode, difficulty, currentGame.IsAIMode)
+			} else {
+				logger.LogGameLoss(username, mode, difficulty, currentGame.IsAIMode)
+			}
+		}
 	}
 
 	// Si mode IA et c'est le tour de l'IA
@@ -233,6 +274,17 @@ func HandlePlay(w http.ResponseWriter, r *http.Request) {
 		aiCol := currentGame.AI.PlayMove(currentGame)
 		if aiCol != -1 {
 			placeToken(currentGame, aiCol)
+			// Logger si l'IA a gagné après son coup
+			if currentGame.Over && currentGame.Current == 2 {
+				mode := "IA"
+				difficulty := currentGame.AIDifficulty
+				logger.LogGameLoss(username, mode, difficulty, currentGame.IsAIMode)
+			} else if currentGame.Over && currentGame.Message == "Match nul !" {
+				// Match nul après le coup de l'IA
+				mode := "IA"
+				difficulty := currentGame.AIDifficulty
+				logger.LogGameDraw(username, mode, difficulty, currentGame.IsAIMode)
+			}
 		}
 	}
 
@@ -278,25 +330,39 @@ func HandleReset(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Récupérer le nom d'utilisateur pour les logs
+	username := auth.GetUsernameFromRequest(r)
+	if username == "" {
+		username = "Inconnu"
+	}
+
 	// Si c'est une partie IA, redémarrer avec les mêmes paramètres
 	if currentGame != nil && currentGame.IsAIMode {
 		currentGame = newAIGame(6, 7, currentGame.AIDifficulty)
+		// Logger le démarrage de partie
+		logger.LogGameStart(username, "IA", currentGame.AIDifficulty, true)
 	} else {
 		// TOUJOURS créer un nouveau jeu selon la difficulté choisie (même si un jeu existe)
+		var difficulty string
 		if hdifficulty == "easy" {
 			g := newGame(6, 7)
 			g.WinLength = 3
 			currentGame = g
+			difficulty = "easy"
 		} else if hdifficulty == "hard" {
 			g := newGame(7, 8)
 			g.WinLength = 7
 			currentGame = g
+			difficulty = "hard"
 		} else {
 			// Normal par défaut
 			g := newGame(6, 7)
 			g.WinLength = 4
 			currentGame = g
+			difficulty = "normal"
 		}
+		// Logger le démarrage de partie
+		logger.LogGameStart(username, "2 Joueurs", difficulty, false)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -340,6 +406,15 @@ func HandleNewAIGame(w http.ResponseWriter, r *http.Request) {
 	}
 
 	currentGame = newAIGame(6, 7, difficulty)
+
+	// Récupérer le nom d'utilisateur pour les logs
+	username := auth.GetUsernameFromRequest(r)
+	if username == "" {
+		username = "Inconnu"
+	}
+
+	// Logger le démarrage de partie
+	logger.LogGameStart(username, "IA", difficulty, true)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
