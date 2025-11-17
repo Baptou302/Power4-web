@@ -33,10 +33,32 @@
     }
     .audio-player img { width:100%; border-radius:12px; margin-bottom:8px; }
     .audio-player .track-title { font-weight:600; margin-bottom:10px; font-size:0.95rem; }
-    .audio-player .controls { display:flex; justify-content:center; gap:10px; }
+    .audio-player .controls { display:flex; justify-content:center; gap:10px; margin-bottom:12px; }
     .audio-player button { border:none; background:none; font-size:1.4rem; cursor:pointer; transition:transform 0.2s ease; }
     .audio-player button:hover { transform: scale(1.2); }
     .audio-player:hover { transform: translateY(-2px); transition:transform 0.2s ease; }
+    .audio-player .progress-container { margin-top: 8px; }
+    .audio-player .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(0,0,0,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      cursor: pointer;
+      margin-bottom: 6px;
+    }
+    .audio-player .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+    .audio-player .time-display {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #666;
+    }
 
     /* Styles pour l'affichage du mode actuel */
     .current-mode-display {
@@ -108,16 +130,25 @@
 </main>
 
 <div class="audio-player">
-  <img src="/assets/musique/movie.jpg" alt="Pochette musique">
-  <div class="track-title">movie L2B</div>
+  <img id="coverImg" src="/assets/musique/movie.jpg" alt="Pochette musique">
+  <div class="track-title" id="trackTitle">movie L2B</div>
   <div class="controls">
     <button id="playPauseBtn" title="Lecture/Pause">▶️</button>
-    <button id="nextBtn" title="Rejouer la musique">⏭</button>
+    <button id="nextBtn" title="Musique suivante">⏭</button>
+  </div>
+  <div class="progress-container">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="time-display">
+      <span id="currentTime">0:00</span>
+      <span id="totalTime">0:00</span>
+    </div>
   </div>
 </div>
 
-<audio id="bgMusic" preload="auto" loop>
-  <source src="/assets/music/movie.mp3" type="audio/mpeg">
+<audio id="bgMusic" preload="auto">
+  <source id="audioSource" src="/assets/music/movie.mp3" type="audio/mpeg">
 </audio>
 
 <script>
@@ -461,12 +492,130 @@ async function init() {
   startNewGame();
 }
 
+// Système de playlist
+const playlist = [
+  {
+    title: "movie L2B",
+    audio: "/assets/music/movie.mp3",
+    cover: "/assets/musique/movie.jpg"
+  },
+  {
+    title: "parle-moi",
+    audio: "/assets/music/parle-moi.mp3",
+    cover: "/assets/musique/parle-moi.jpg"
+  }
+];
+
+let currentTrackIndex = 0;
+
 const audio = document.getElementById('bgMusic');
+const audioSource = document.getElementById('audioSource');
+const coverImg = document.getElementById('coverImg');
+const trackTitle = document.getElementById('trackTitle');
 const playPauseBtn = document.getElementById('playPauseBtn');
 const nextBtn = document.getElementById('nextBtn');
-document.addEventListener('DOMContentLoaded',()=>{audio.volume=0.5;});
-playPauseBtn.addEventListener('click',()=>{if(audio.paused){audio.play();playPauseBtn.textContent='⏸';}else{audio.pause();playPauseBtn.textContent='▶️';}});
-nextBtn.addEventListener('click',()=>{audio.currentTime=0;audio.play();playPauseBtn.textContent='⏸';});
+
+const progressFill = document.getElementById('progressFill');
+const currentTimeEl = document.getElementById('currentTime');
+const totalTimeEl = document.getElementById('totalTime');
+const progressBar = document.querySelector('.progress-bar');
+
+// Formater le temps en mm:ss
+function formatTime(seconds) {
+  if (isNaN(seconds)) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Mettre à jour la barre de progression
+function updateProgress() {
+  if (audio.duration) {
+    const percent = (audio.currentTime / audio.duration) * 100;
+    progressFill.style.width = percent + '%';
+    currentTimeEl.textContent = formatTime(audio.currentTime);
+    totalTimeEl.textContent = formatTime(audio.duration);
+  }
+}
+
+// Initialiser le volume
+document.addEventListener('DOMContentLoaded', () => {
+  audio.volume = 0.5;
+  loadTrack(currentTrackIndex, true); // Démarrer automatiquement
+  
+  // Mettre à jour la barre de progression en temps réel
+  audio.addEventListener('timeupdate', updateProgress);
+  
+  // Mettre à jour le temps total quand les métadonnées sont chargées
+  audio.addEventListener('loadedmetadata', () => {
+    totalTimeEl.textContent = formatTime(audio.duration);
+  });
+  
+  // Quand une musique se termine, passer à la suivante
+  audio.addEventListener('ended', () => {
+    nextTrack();
+  });
+  
+  // Permettre de cliquer sur la barre pour changer la position
+  progressBar.addEventListener('click', (e) => {
+    const rect = progressBar.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    audio.currentTime = percent * audio.duration;
+  });
+});
+
+// Charger une piste
+function loadTrack(index, autoPlay = false) {
+  if (index < 0 || index >= playlist.length) {
+    return;
+  }
+  
+  const track = playlist[index];
+  audioSource.src = track.audio;
+  coverImg.src = track.cover;
+  trackTitle.textContent = track.title;
+  
+  // Recharger l'audio avec la nouvelle source
+  audio.load();
+  
+  // Démarrer automatiquement si demandé
+  if (autoPlay) {
+    audio.play().then(() => {
+      playPauseBtn.textContent = '⏸';
+    }).catch(err => {
+      // Ignorer les erreurs de lecture automatique (politique du navigateur)
+      playPauseBtn.textContent = '▶️';
+    });
+  } else if (!audio.paused) {
+    // Si la musique était en cours de lecture, continuer
+    audio.play().catch(err => {
+      // Ignorer les erreurs
+    });
+  }
+}
+
+// Piste suivante
+function nextTrack() {
+  currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+  loadTrack(currentTrackIndex, true); // Démarrer automatiquement
+  playPauseBtn.textContent = '⏸';
+}
+
+// Play/Pause
+playPauseBtn.addEventListener('click', () => {
+  if (audio.paused) {
+    audio.play();
+    playPauseBtn.textContent = '⏸';
+  } else {
+    audio.pause();
+    playPauseBtn.textContent = '▶️';
+  }
+});
+
+// Bouton suivant
+nextBtn.addEventListener('click', () => {
+  nextTrack();
+});
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
