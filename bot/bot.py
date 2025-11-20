@@ -164,6 +164,57 @@ async def handle_log_event(request):
             )
             await send_log(embed)
         
+        elif event_type == "xp_gain":
+            # Log de gain d'XP
+            username = data.get("username", "Inconnu")
+            amount = data.get("amount", 0)
+            old_xp = data.get("old_xp", 0)
+            new_xp = data.get("new_xp", 0)
+            old_level = data.get("old_level", 0)
+            new_level = data.get("new_level", 0)
+            level_up = data.get("level_up", False)
+            
+            # Déterminer le titre selon le niveau
+            def get_title(level):
+                if level >= 20:
+                    return "Grand Maître"
+                elif level >= 15:
+                    return "Expérimenté"
+                elif level >= 10:
+                    return "Amateur"
+                elif level >= 5:
+                    return "Débutant"
+                return "Novice"
+            
+            title = get_title(new_level)
+            
+            # Couleur selon si c'est un level up
+            color = 0x9b59b6 if level_up else 0x3498db  # Violet si level up, bleu sinon
+            
+            # Description
+            if level_up:
+                description = f"**{username}** a gagné {amount} XP et est passé au niveau {new_level} ! 🎉"
+            else:
+                description = f"**{username}** a gagné {amount} XP"
+            
+            fields = [
+                {"name": "XP gagné", "value": f"+{amount} XP", "inline": True},
+                {"name": "XP total", "value": f"{old_xp} → {new_xp}", "inline": True},
+                {"name": "Niveau", "value": f"{old_level} → {new_level}", "inline": True},
+                {"name": "Titre", "value": title, "inline": True}
+            ]
+            
+            if level_up:
+                fields.append({"name": "🎊 Level Up !", "value": f"Niveau {old_level} → {new_level}", "inline": False})
+            
+            embed = create_embed(
+                title="⭐ Gain d'XP" if not level_up else "🎊 Level Up !",
+                description=description,
+                color=color,
+                fields=fields
+            )
+            await send_log(embed)
+        
         return web.json_response({"status": "ok"})
         
     except Exception as e:

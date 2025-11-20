@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Classement - Power4 Web</title>
+  <link rel="stylesheet" href="/assets/style/style.css" />
+  <style>
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+    }
+    
+    @keyframes shimmer {
+      0% {
+        background-position: -1000px 0;
+      }
+      100% {
+        background-position: 1000px 0;
+      }
+    }
+    
+    @keyframes rowSlideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      animation: fadeIn 0.6s ease-out;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: fadeInUp 0.8s ease-out;
+    }
+    
+    .header h1 {
+      margin: 0;
+      color: #333;
+      font-size: 2.5rem;
+    }
+    
+    .btn-back {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-back::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+    
+    .btn-back:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+    
+    .btn-back:hover {
+      background: linear-gradient(135deg, #5568d3 0%, #667eea 100%);
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .current-user-card {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      border: 3px solid #667eea;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .current-user-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+      animation: shimmer 3s infinite;
+    }
+    
+    .current-user-card h2 {
+      margin: 0 0 15px 0;
+      color: #333;
+      font-size: 1.5rem;
+    }
+    
+    .current-user-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    
+    .current-user-info div {
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    
+    .current-user-info strong {
+      color: #667eea;
+      display: block;
+      margin-bottom: 5px;
+    }
+    
+    .leaderboard-container {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      animation: fadeInUp 0.8s ease-out 0.4s both;
+    }
+    
+    .leaderboard-container h2 {
+      margin: 0 0 20px 0;
+      color: #333;
+      font-size: 1.8rem;
+    }
+    
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .leaderboard-table th,
+    .leaderboard-table td {
+      padding: 15px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .leaderboard-table th {
+      background: #f8f9fa;
+      color: #666;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+      position: sticky;
+      top: 0;
+    }
+    
+    .leaderboard-table td {
+      color: #333;
+    }
+    
+    .leaderboard-table tbody tr {
+      animation: rowSlideIn 0.5s ease-out both;
+      transition: all 0.3s ease;
+    }
+    
+    .leaderboard-table tbody tr:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+    
+    .leaderboard-table tbody tr:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+    
+    .leaderboard-table tbody tr:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+    
+    .leaderboard-table tbody tr:nth-child(n+4) {
+      animation-delay: calc(0.25s + (var(--row-index, 0) * 0.05s));
+    }
+    
+    .leaderboard-table tbody tr:hover {
+      background: #f8f9fa;
+      transform: translateX(5px);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .rank-badge {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-align: center;
+      line-height: 40px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+      animation: pulse 2s infinite;
+    }
+    
+    .rank-badge:hover {
+      transform: scale(1.2) rotate(360deg);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+    }
+    
+    .rank-badge.gold {
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      color: #333;
+    }
+    
+    .rank-badge.silver {
+      background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+      color: #333;
+    }
+    
+    .rank-badge.bronze {
+      background: linear-gradient(135deg, #cd7f32 0%, #e6a857 100%);
+      color: white;
+    }
+    
+    .username-cell {
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .title-badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: #667eea;
+      color: white;
+    }
+    
+    .xp-value {
+      font-weight: 600;
+      color: #667eea;
+    }
+    
+    .level-value {
+      font-weight: 600;
+      color: #764ba2;
+    }
+    
+    .win-rate {
+      font-weight: 600;
+    }
+    
+    .win-rate.high {
+      color: #4CAF50;
+    }
+    
+    .win-rate.medium {
+      color: #ff9800;
+    }
+    
+    .win-rate.low {
+      color: #f44336;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+    
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+    }
+    
+    .current-user-highlight {
+      background: #e3f2fd !important;
+      border-left: 4px solid #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🏆 Classement</h1>
+      <a href="/mode-selection" class="btn-back">← Retour</a>
+    </div>
+
+    {{if ne .CurrentUserRank -1}}
+    <div class="current-user-card">
+      <h2>Votre position</h2>
+      <div class="current-user-info">
+        <div>
+          <strong>Rang</strong>
+          <span>#{{.CurrentUserRank}}</span>
+        </div>
+        <div>
+          <strong>Pseudo</strong>
+          <span>{{.Username}}</span>
+        </div>
+        <div>
+          <strong>Titre</strong>
+          <span>{{.CurrentUserTitle}}</span>
+        </div>
+        <div>
+          <strong>Niveau</strong>
+          <span>{{.CurrentUserLevel}}</span>
+        </div>
+        <div>
+          <strong>XP</strong>
+          <span>{{.CurrentUserXP}} / 100</span>
+        </div>
+        {{if .CurrentUserStats}}
+        <div>
+          <strong>Victoires</strong>
+          <span>{{.CurrentUserStats.Wins}}</span>
+        </div>
+        <div>
+          <strong>Parties</strong>
+          <span>{{.CurrentUserStats.TotalGames}}</span>
+        </div>
+        <div>
+          <strong>Taux de victoire</strong>
+          <span>{{printf "%.1f" .CurrentUserStats.WinRate}}%</span>
+        </div>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+
+    <div class="leaderboard-container">
+      <h2>📊 Top 50 Joueurs</h2>
+      {{if and .Leaderboard (gt (len .Leaderboard) 0)}}
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Rang</th>
+            <th>Joueur</th>
+            <th>Titre</th>
+            <th>Niveau</th>
+            <th>XP</th>
+            <th>Victoires</th>
+            <th>Parties</th>
+            <th>Taux de victoire</th>
+            <th>Meilleur streak</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Leaderboard}}
+          <tr {{if eq .Username $.Username}}class="current-user-highlight"{{end}}>
+            <td>
+              {{if eq .Rank 1}}
+                <span class="rank-badge gold">🥇</span>
+              {{else if eq .Rank 2}}
+                <span class="rank-badge silver">🥈</span>
+              {{else if eq .Rank 3}}
+                <span class="rank-badge bronze">🥉</span>
+              {{else}}
+                <span class="rank-badge">{{.Rank}}</span>
+              {{end}}
+            </td>
+            <td class="username-cell">{{.Username}}</td>
+            <td><span class="title-badge">{{.Title}}</span></td>
+            <td><span class="level-value">{{.Level}}</span></td>
+            <td><span class="xp-value">{{.XP}}</span></td>
+            <td>{{.Wins}}</td>
+            <td>{{.TotalGames}}</td>
+            <td>
+              <span class="win-rate {{if ge .WinRate 60}}high{{else if ge .WinRate 40}}medium{{else}}low{{end}}">
+                {{if gt .TotalGames 0}}{{printf "%.1f" .WinRate}}%{{else}}-{{end}}
+              </span>
+            </td>
+            <td>{{.BestStreak}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+      {{else}}
+      <div class="empty-state">
+        <div class="empty-state-icon">📊</div>
+        <p>Aucun joueur dans le classement pour le moment</p>
+        <a href="/mode-selection" class="btn-back" style="margin-top: 20px;">Jouer maintenant</a>
+      </div>
+      {{end}}
+    </div>
+  </div>
+</body>
+</html>
+

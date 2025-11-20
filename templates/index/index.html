@@ -102,7 +102,15 @@
 <body>
 <main>
   <header>
-    <div class="user-info">👤 Connecté en tant que <span id="username">Inconnu</span></div>
+    <div class="user-info">
+      <div>👤 <span id="username">Inconnu</span></div>
+      <div id="userStats" style="margin-top: 5px; font-size: 0.85rem; color: #666;">
+        <strong id="userTitle" style="color: #667eea;">Novice</strong> - Niveau <span id="userLevel">0</span> | XP: <span id="userXP">0</span>
+        <div style="width: 120px; height: 4px; background: #e0e0e0; border-radius: 2px; margin-top: 4px; overflow: hidden;">
+          <div id="xpBar" style="height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); width: 0%; transition: width 0.3s ease;"></div>
+        </div>
+      </div>
+    </div>
     <button id="logoutBtn">Déconnexion</button>
   </header>
 
@@ -177,6 +185,109 @@ async function init() {
   const dataUser = await resUser.json();
   const username = dataUser.username;
   document.getElementById("username").textContent = username || "Inconnu";
+  
+  // Charger les stats (XP, niveau, titre)
+  await loadStats();
+
+  // Fonction pour afficher l'animation d'XP gagnée (définie globalement pour être accessible)
+  window.showXPAnimation = function() {
+    console.log('showXPAnimation appelée');
+    const userStats = document.getElementById('userStats');
+    if (!userStats) {
+      console.error('userStats non trouvé');
+      return;
+    }
+    
+    // Créer l'élément d'animation
+    const xpAnimation = document.createElement('div');
+    xpAnimation.textContent = '+5 XP';
+    xpAnimation.style.cssText = `
+      position: absolute;
+      top: -30px;
+      right: 0;
+      color: #4CAF50;
+      font-weight: bold;
+      font-size: 1.2rem;
+      pointer-events: none;
+      z-index: 1000;
+      animation: xpGain 1.5s ease-out forwards;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    `;
+    
+    // Ajouter l'animation CSS si elle n'existe pas déjà
+    if (!document.getElementById('xpAnimationStyle')) {
+      const style = document.createElement('style');
+      style.id = 'xpAnimationStyle';
+      style.textContent = `
+        @keyframes xpGain {
+          0% {
+            opacity: 0;
+            transform: translateY(0) scale(0.5);
+          }
+          20% {
+            opacity: 1;
+            transform: translateY(-10px) scale(1.1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateY(-40px) scale(0.8);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    // Positionner relativement au userStats
+    userStats.style.position = 'relative';
+    userStats.appendChild(xpAnimation);
+    console.log('Animation XP ajoutée au DOM');
+    
+    // Supprimer l'élément après l'animation
+    setTimeout(() => {
+      if (xpAnimation.parentNode) {
+        xpAnimation.parentNode.removeChild(xpAnimation);
+      }
+    }, 1500);
+  };
+
+  // Fonction pour charger les statistiques
+  async function loadStats() {
+    try {
+      const res = await fetch('/api/stats');
+      if (res.ok) {
+        const stats = await res.json();
+        const oldXP = parseInt(document.getElementById('userXP').textContent) || 0;
+        const newXP = stats.xp;
+        
+        document.getElementById('userLevel').textContent = stats.level;
+        document.getElementById('userTitle').textContent = stats.title;
+        document.getElementById('userXP').textContent = stats.xp;
+        
+        // Calculer le pourcentage de la barre d'XP
+        let percentage;
+        if (stats.level >= 20) {
+          // Niveau maximum : barre pleine
+          percentage = 100;
+        } else {
+          const xpInLevel = stats.xpInCurrentLevel;
+          const xpNeededForLevel = 5; // 5 XP par niveau
+          percentage = (xpInLevel / xpNeededForLevel) * 100;
+        }
+        
+        // Animation de la barre d'XP
+        const xpBar = document.getElementById('xpBar');
+        if (oldXP < newXP && xpBar) {
+          // Animer la barre d'XP
+          xpBar.style.transition = 'width 0.8s ease-out';
+          xpBar.style.width = percentage + '%';
+        } else {
+          xpBar.style.width = percentage + '%';
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des stats:', error);
+    }
+  }
 
   // Récupérer les éléments DOM d'abord
   const colChoicesForm = document.querySelector('.col-choices');
@@ -350,6 +461,30 @@ async function init() {
       // Mettre à jour le message
       if (data.over) {
         info.textContent = data.message || "Partie terminée";
+        // Vérifier si l'XP a été gagnée et afficher l'animation
+        console.log('Game over - xpGained:', data.xpGained, 'message:', data.message, 'currentPlayer:', data.currentPlayer);
+        
+        // Vérifier si c'est une victoire du joueur (joueur 1)
+        const isPlayerWin = data.message && (
+          data.message.includes("Vous gagnez") || 
+          data.message.includes("Joueur 1") || 
+          data.message.includes("gagné") || 
+          data.message.includes("gagnez")
+        ) && data.currentPlayer === 1;
+        
+        if (data.xpGained === true || isPlayerWin) {
+          console.log('Affichage de l\'animation XP');
+          if (window.showXPAnimation) {
+            window.showXPAnimation();
+          } else {
+            console.error('showXPAnimation n\'est pas définie');
+          }
+          // Recharger les stats après une victoire pour afficher le nouvel XP
+          setTimeout(() => loadStats(), 500);
+        } else {
+          // Recharger les stats même en cas de défaite pour mettre à jour l'affichage
+          setTimeout(() => loadStats(), 500);
+        }
       } else if (currentMode === 'ai' || data.isAIMode) {
         // En mode IA, le joueur est toujours 1, l'IA est 2
         if (data.currentPlayer === 1) {
@@ -517,7 +652,7 @@ const playlist = [
   {
     title: "Shatta Confession",
     audio: "/assets/music/shatta-confession.mp3",
-    cover: "/assets/musique/shatta-confession.jpg"
+    cover: "/assets/musique/shatta-confessions.jpg"
   }
 ];
 

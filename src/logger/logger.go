@@ -65,8 +65,8 @@ func LogLogin(username, role string) {
 // LogGameStart envoie un log de début de partie
 func LogGameStart(username, mode, difficulty string, isAIMode bool) {
 	LogEvent("game_start", map[string]interface{}{
-		"username":  username,
-		"mode":      mode,
+		"username":   username,
+		"mode":       mode,
 		"difficulty": difficulty,
 		"is_ai_mode": isAIMode,
 	})
@@ -102,3 +102,15 @@ func LogGameDraw(username, mode, difficulty string, isAIMode bool) {
 	})
 }
 
+// LogXP envoie un log de gain d'XP
+func LogXP(username string, amount int, oldXP int, newXP int, oldLevel int, newLevel int, levelUp bool) {
+	LogEvent("xp_gain", map[string]interface{}{
+		"username":  username,
+		"amount":    amount,
+		"old_xp":    oldXP,
+		"new_xp":    newXP,
+		"old_level": oldLevel,
+		"new_level": newLevel,
+		"level_up":  levelUp,
+	})
+}

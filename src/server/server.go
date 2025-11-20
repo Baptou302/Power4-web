@@ -19,6 +19,16 @@ func SetupRoutes() http.Handler {
 
 	// Routes protégées (avec middleware RequireAuth)
 	mux.Handle("/mode-selection", middleware.RequireAuth(http.HandlerFunc(handlers.HandleModeSelection)))
+	mux.Handle("/profile", middleware.RequireAuth(http.HandlerFunc(handlers.HandleProfile)))
+	mux.Handle("/leaderboard", middleware.RequireAuth(http.HandlerFunc(handlers.HandleLeaderboard)))
+	mux.Handle("/history", middleware.RequireAuth(http.HandlerFunc(handlers.HandleHistory)))
+	mux.Handle("/shop", middleware.RequireAuth(http.HandlerFunc(handlers.HandleShop)))
+	mux.Handle("/support", middleware.RequireAuth(http.HandlerFunc(handlers.HandleSupport)))
+	mux.Handle("/api/tickets/create", middleware.RequireAuth(http.HandlerFunc(handlers.HandleCreateTicket)))
+	mux.Handle("/api/paypal/config", middleware.RequireAuth(http.HandlerFunc(handlers.HandlePayPalConfig)))
+	mux.Handle("/api/paypal/create-order", middleware.RequireAuth(http.HandlerFunc(handlers.HandlePayPalCreateOrder)))
+	mux.Handle("/api/paypal/capture-order", middleware.RequireAuth(http.HandlerFunc(handlers.HandlePayPalCaptureOrder)))
+	mux.Handle("/api/stats", middleware.RequireAuth(http.HandlerFunc(handlers.HandleStats)))
 	mux.Handle("/play", middleware.RequireAuth(http.HandlerFunc(game.HandlePlay)))
 	mux.Handle("/reset", middleware.RequireAuth(http.HandlerFunc(game.HandleReset)))
 	mux.Handle("/new-ai-game", middleware.RequireAuth(http.HandlerFunc(game.HandleNewAIGame)))
@@ -30,6 +40,16 @@ func SetupRoutes() http.Handler {
 	adminHandler = middleware.RequireAdmin(adminHandler)
 	adminHandler = middleware.RequireAuth(adminHandler)
 	mux.Handle("/admin", adminHandler)
+
+	var adminTicketsHandler http.Handler = http.HandlerFunc(handlers.HandleAdminTickets)
+	adminTicketsHandler = middleware.RequireAdmin(adminTicketsHandler)
+	adminTicketsHandler = middleware.RequireAuth(adminTicketsHandler)
+	mux.Handle("/admin/tickets", adminTicketsHandler)
+
+	mux.Handle("/api/tickets/respond", middleware.RequireAuth(middleware.RequireAdmin(http.HandlerFunc(handlers.HandleTicketResponse))))
+	mux.Handle("/api/tickets/status", middleware.RequireAuth(middleware.RequireAdmin(http.HandlerFunc(handlers.HandleUpdateTicketStatus))))
+	mux.Handle("/api/tickets/delete", middleware.RequireAuth(middleware.RequireAdmin(http.HandlerFunc(handlers.HandleDeleteTicket))))
+	mux.Handle("/api/tickets/user-delete", middleware.RequireAuth(http.HandlerFunc(handlers.HandleUserDeleteTicket)))
 
 	// Fichiers statiques
 	fs := http.FileServer(http.Dir("assets"))

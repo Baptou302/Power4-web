@@ -62,6 +62,53 @@ func ConnectDB() error {
 		}
 	}
 
+	// Initialiser les colonnes XP
+	if err := InitializeXPColumns(); err != nil {
+		log.Printf("Note: Erreur lors de l'initialisation des colonnes XP: %v", err)
+	}
+
+	// Créer la table game_history pour stocker l'historique des parties
+	createGameHistoryTable := `
+	CREATE TABLE IF NOT EXISTS game_history (
+		id INT AUTO_INCREMENT PRIMARY KEY,
+		username VARCHAR(255) NOT NULL,
+		result VARCHAR(20) NOT NULL,
+		mode VARCHAR(50) NOT NULL,
+		difficulty VARCHAR(50) DEFAULT '',
+		is_ai_mode BOOLEAN NOT NULL DEFAULT FALSE,
+		xp_gained INT DEFAULT 0,
+		played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		INDEX idx_username (username),
+		INDEX idx_played_at (played_at)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+
+	_, err = DB.Exec(createGameHistoryTable)
+	if err != nil {
+		log.Printf("Note: Erreur lors de la création de la table game_history: %v", err)
+	}
+
+	// Créer la table tickets pour le système de support
+	createTicketsTable := `
+	CREATE TABLE IF NOT EXISTS tickets (
+		id INT AUTO_INCREMENT PRIMARY KEY,
+		username VARCHAR(255) NOT NULL,
+		subject VARCHAR(255) NOT NULL,
+		message TEXT NOT NULL,
+		status VARCHAR(20) NOT NULL DEFAULT 'open',
+		admin_response TEXT DEFAULT NULL,
+		admin_username VARCHAR(255) DEFAULT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+		INDEX idx_username (username),
+		INDEX idx_status (status),
+		INDEX idx_created_at (created_at)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+
+	_, err = DB.Exec(createTicketsTable)
+	if err != nil {
+		log.Printf("Note: Erreur lors de la création de la table tickets: %v", err)
+	}
+
 	// Vérifier si l'utilisateur admin existe, sinon le créer
 	adminPassword := "admin123" // À changer en production !
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
@@ -159,6 +206,9 @@ type User struct {
 	Username  string `json:"username"`
 	Password  string `json:"-"` // Le mot de passe n'est jamais sérialisé en JSON
 	Role      string `json:"role"`
+	XP        int    `json:"xp"`
+	Level     int    `json:"level"`
+	Title     string `json:"title"`
 	CreatedAt string `json:"created_at,omitempty"`
 	UpdatedAt string `json:"updated_at,omitempty"`
 }
@@ -214,7 +264,7 @@ func GetAllUsers() ([]User, error) {
 
 	// Récupérer uniquement les colonnes qui existent
 	rows, err := DB.Query(`
-		SELECT id, username, COALESCE(role, 'user') as role
+		SELECT id, username, COALESCE(role, 'user') as role, COALESCE(xp, 0) as xp
 		FROM users 
 		ORDER BY id DESC`)
 
@@ -227,10 +277,12 @@ func GetAllUsers() ([]User, error) {
 	for rows.Next() {
 		var user User
 		var role sql.NullString
+		var xp sql.NullInt64
 		err := rows.Scan(
 			&user.ID,
 			&user.Username,
 			&role,
+			&xp,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("erreur lors du scan des utilisateurs: %v", err)
@@ -246,6 +298,17 @@ func GetAllUsers() ([]User, error) {
 		if user.Role == "" {
 			user.Role = "user"
 		}
+
+		// Gérer l'XP
+		if xp.Valid {
+			user.XP = int(xp.Int64)
+		} else {
+			user.XP = 0
+		}
+
+		// Calculer le niveau et le titre
+		user.Level = CalculateLevel(user.XP)
+		user.Title = GetTitle(user.Level)
 
 		users = append(users, user)
 	}

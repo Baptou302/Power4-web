@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Histoire du Puissance 4 - Power4 Web</title>
+  <link rel="stylesheet" href="/assets/style/style.css" />
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .history-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 3px solid #667eea;
+    }
+    
+    .header h1 {
+      color: #333;
+      font-size: 2.5rem;
+      margin: 0 0 10px 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .header p {
+      color: #666;
+      font-size: 1.1rem;
+      margin: 0;
+    }
+    
+    .history-section {
+      margin-bottom: 35px;
+      padding: 25px;
+      background: #f8f9fa;
+      border-radius: 15px;
+      border-left: 5px solid #667eea;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .history-section:hover {
+      transform: translateX(5px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+    }
+    
+    .history-section h2 {
+      color: #333;
+      font-size: 1.8rem;
+      margin: 0 0 15px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .history-section h2 .icon {
+      font-size: 2rem;
+    }
+    
+    .history-section p {
+      color: #555;
+      line-height: 1.8;
+      font-size: 1.05rem;
+      margin: 0 0 15px 0;
+    }
+    
+    .history-section p:last-child {
+      margin-bottom: 0;
+    }
+    
+    .timeline {
+      position: relative;
+      padding-left: 30px;
+      margin: 20px 0;
+    }
+    
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+      border-radius: 2px;
+    }
+    
+    .timeline-item {
+      position: relative;
+      margin-bottom: 25px;
+      padding-left: 30px;
+    }
+    
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 5px;
+      width: 15px;
+      height: 15px;
+      background: #667eea;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 0 0 3px #667eea;
+    }
+    
+    .timeline-item h3 {
+      color: #333;
+      font-size: 1.3rem;
+      margin: 0 0 8px 0;
+    }
+    
+    .timeline-item p {
+      color: #666;
+      margin: 0;
+      line-height: 1.6;
+    }
+    
+    .highlight-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      margin: 30px 0;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    }
+    
+    .highlight-box h3 {
+      margin: 0 0 10px 0;
+      font-size: 1.5rem;
+    }
+    
+    .highlight-box p {
+      margin: 0;
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+    
+    .back-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 30px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      margin-top: 20px;
+    }
+    
+    .back-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .fun-facts {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      border-radius: 15px;
+      padding: 20px;
+      margin: 30px 0;
+    }
+    
+    .fun-facts h3 {
+      color: #856404;
+      margin: 0 0 15px 0;
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .fun-facts ul {
+      margin: 0;
+      padding-left: 25px;
+      color: #856404;
+    }
+    
+    .fun-facts li {
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+    
+    @media (max-width: 768px) {
+      .history-container {
+        padding: 20px;
+      }
+      
+      .header h1 {
+        font-size: 2rem;
+      }
+      
+      .history-section h2 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="history-container">
+    <div class="header">
+      <h1>📚 L'Histoire du Puissance 4</h1>
+      <p>Découvrez les origines de ce jeu de stratégie légendaire</p>
+    </div>
+    
+    <div class="history-section">
+      <h2><span class="icon">🎯</span> Les Origines</h2>
+      <p>
+        Le <strong>Puissance 4</strong> (également connu sous le nom de <em>Connect Four</em> en anglais) 
+        est un jeu de stratégie en forme de grille verticale. Ce jeu de société a été inventé en <strong>1974</strong> 
+        par <strong>Howard Wexler</strong> et <strong>Ned Strongin</strong>, deux inventeurs américains passionnés 
+        de jeux de société.
+      </p>
+      <p>
+        L'idée originale était de créer un jeu simple mais stratégique, accessible à tous les âges, 
+        qui combinerait les éléments du tic-tac-toe (morpion) avec la mécanique de la gravité.
+      </p>
+    </div>
+    
+    <div class="highlight-box">
+      <h3>1974 - L'Année de la Création</h3>
+      <p>Le Puissance 4 voit le jour grâce à l'imagination de deux inventeurs américains</p>
+    </div>
+    
+    <div class="history-section">
+      <h2><span class="icon">🏢</span> La Commercialisation</h2>
+      <p>
+        Le jeu a été rapidement commercialisé par <strong>Milton Bradley</strong> (maintenant une filiale de Hasbro), 
+        une entreprise renommée dans l'industrie du jouet. Le succès fut immédiat et le Puissance 4 est rapidement 
+        devenu l'un des jeux de société les plus populaires au monde.
+      </p>
+      <p>
+        Le concept était révolutionnaire : un plateau vertical avec des colonnes où les jetons tombent sous l'effet 
+        de la gravité, créant une dimension tactique unique. Les joueurs doivent aligner 4 jetons de leur couleur 
+        horizontalement, verticalement ou en diagonale pour remporter la partie.
+      </p>
+    </div>
+    
+    <div class="history-section">
+      <h2><span class="icon">🧠</span> La Dimension Mathématique</h2>
+      <p>
+        Le Puissance 4 n'est pas seulement un jeu amusant, c'est aussi un objet d'étude mathématique fascinant. 
+        Les chercheurs en théorie des jeux ont analysé toutes les positions possibles et ont déterminé que, 
+        avec une stratégie parfaite, le premier joueur peut toujours gagner.
+      </p>
+      <p>
+        En 1988, <strong>James D. Allen</strong> et <strong>Victor Allis</strong> ont indépendamment prouvé que 
+        le premier joueur peut forcer une victoire s'il joue de manière optimale. Cette découverte a fait du 
+        Puissance 4 un jeu "résolu" mathématiquement, tout en restant un défi passionnant pour les joueurs humains.
+      </p>
+    </div>
+    
+    <div class="history-section">
+      <h2><span class="icon">🌍</span> L'Expansion Mondiale</h2>
+      <p>
+        Au fil des décennies, le Puissance 4 a conquis le monde entier. Il est disponible dans de nombreuses 
+        variantes et a été adapté en versions électroniques, applications mobiles et jeux en ligne.
+      </p>
+      <p>
+        Le jeu a également inspiré de nombreuses variantes, notamment des versions avec des grilles plus grandes, 
+        des règles modifiées, et même des versions où la gravité peut être inversée !
+      </p>
+    </div>
+    
+    <div class="fun-facts">
+      <h3>💡 Faits Intéressants</h3>
+      <ul>
+        <li><strong>Plus de 65 millions</strong> d'exemplaires du jeu ont été vendus dans le monde depuis sa création</li>
+        <li>Le record du monde pour la partie la plus rapide est de <strong>6 secondes</strong></li>
+        <li>Il existe <strong>4 531 985 219 092</strong> positions possibles sur un plateau 6x7</li>
+        <li>Le Puissance 4 a été utilisé comme outil pédagogique pour enseigner les mathématiques et la logique</li>
+        <li>Des tournois internationaux de Puissance 4 sont organisés régulièrement</li>
+      </ul>
+    </div>
+    
+    <div class="history-section">
+      <h2><span class="icon">💻</span> L'Ère Numérique</h2>
+      <p>
+        Avec l'avènement de l'informatique, le Puissance 4 a trouvé une nouvelle vie dans le monde numérique. 
+        Des programmes d'intelligence artificielle ont été développés pour jouer au Puissance 4, certains 
+        atteignant un niveau de jeu quasi-parfait.
+      </p>
+      <p>
+        Aujourd'hui, des versions en ligne permettent aux joueurs du monde entier de s'affronter, et des 
+        applications mobiles rendent le jeu accessible partout. Le Puissance 4 reste un classique intemporel 
+        qui continue de captiver les générations.
+      </p>
+    </div>
+    
+    <div class="highlight-box">
+      <h3>🎮 Un Jeu Intemporel</h3>
+      <p>Près de 50 ans après sa création, le Puissance 4 continue de fasciner et de rassembler les joueurs du monde entier</p>
+    </div>
+    
+    <a href="/mode-selection" class="back-button">← Retour à la sélection des modes</a>
+  </div>
+</body>
+</html>
+

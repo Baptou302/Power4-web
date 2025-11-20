@@ -6,6 +6,67 @@
   <title>Choisir le mode de jeu - Power4 Web</title>
   <link rel="stylesheet" href="/assets/style/style.css" />
   <style>
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+    
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-10px);
+      }
+      60% {
+        transform: translateY(-5px);
+      }
+    }
+    
+    @keyframes shimmer {
+      0% {
+        background-position: -1000px 0;
+      }
+      100% {
+        background-position: 1000px 0;
+      }
+    }
+    
     body {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
@@ -14,6 +75,7 @@
       justify-content: center;
       margin: 0;
       padding: 20px;
+      animation: fadeIn 0.6s ease-out;
     }
     
     .mode-container {
@@ -25,12 +87,14 @@
       text-align: center;
       max-width: 500px;
       width: 100%;
+      animation: fadeInUp 0.8s ease-out;
     }
     
     .mode-container h1 {
       color: #333;
       margin-bottom: 10px;
       font-size: 2.5rem;
+      animation: fadeInUp 1s ease-out 0.2s both;
     }
     
     .mode-container p {
@@ -45,6 +109,13 @@
       padding: 15px;
       margin-bottom: 30px;
       color: #555;
+      animation: fadeInUp 1s ease-out 0.4s both;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .user-info:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
     
     .mode-options {
@@ -62,12 +133,57 @@
       transition: all 0.3s ease;
       text-decoration: none;
       color: inherit;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .mode-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s;
+    }
+    
+    .mode-card:hover::before {
+      left: 100%;
     }
     
     .mode-card:hover {
       border-color: #4CAF50;
-      transform: translateY(-5px);
+      transform: translateY(-5px) scale(1.02);
       box-shadow: 0 10px 25px rgba(76, 175, 80, 0.2);
+    }
+    
+    .mode-card:active {
+      transform: translateY(-2px) scale(0.98);
+    }
+    
+    .mode-card:nth-child(1) {
+      animation: fadeInUp 0.8s ease-out 0.6s both;
+    }
+    
+    .mode-card:nth-child(2) {
+      animation: fadeInUp 0.8s ease-out 0.7s both;
+    }
+    
+    .mode-card:nth-child(3) {
+      animation: fadeInUp 0.8s ease-out 0.8s both;
+    }
+    
+    .mode-card:nth-child(4) {
+      animation: fadeInUp 0.8s ease-out 0.9s both;
+    }
+    
+    .mode-card:nth-child(5) {
+      animation: fadeInUp 0.8s ease-out 1s both;
+    }
+    
+    .mode-card:nth-child(6) {
+      animation: fadeInUp 0.8s ease-out 1.1s both;
     }
     
     .mode-card h3 {
@@ -85,6 +201,12 @@
     .mode-icon {
       font-size: 3rem;
       margin-bottom: 15px;
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+    
+    .mode-card:hover .mode-icon {
+      animation: bounce 0.6s ease;
     }
     
     .difficulty-selector {
@@ -93,6 +215,7 @@
       background: #f8f9fa;
       border-radius: 10px;
       display: none;
+      animation: fadeInUp 0.4s ease-out;
     }
     
     .difficulty-selector h4 {
@@ -114,22 +237,46 @@
       border-radius: 8px;
       cursor: pointer;
       font-weight: 500;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .difficulty-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(33, 150, 243, 0.2);
+      transform: translate(-50%, -50%);
+      transition: width 0.4s, height 0.4s;
+    }
+    
+    .difficulty-btn:hover::before {
+      width: 200px;
+      height: 200px;
     }
     
     .difficulty-btn:hover {
       border-color: #2196F3;
       background: #f0f8ff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(33, 150, 243, 0.2);
     }
     
     .difficulty-btn.selected {
       border-color: #2196F3;
       background: #2196F3;
       color: white;
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
     }
     
     .start-btn {
-      background: #4CAF50;
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
       color: white;
       border: none;
       padding: 15px 30px;
@@ -138,11 +285,38 @@
       font-weight: 600;
       cursor: pointer;
       margin-top: 20px;
-      transition: background 0.2s ease;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      animation: fadeInUp 0.8s ease-out 1.1s both;
+    }
+    
+    .start-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+    
+    .start-btn:hover::before {
+      width: 300px;
+      height: 300px;
     }
     
     .start-btn:hover {
-      background: #45a049;
+      background: linear-gradient(135deg, #45a049 0%, #4CAF50 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+    }
+    
+    .start-btn:active {
+      transform: translateY(0);
     }
     
     .start-btn:disabled {
@@ -156,6 +330,7 @@
       right: 20px;
       display: flex;
       gap: 10px;
+      animation: slideInRight 0.6s ease-out;
     }
     
     .logout-btn {
@@ -205,6 +380,23 @@
     
     <div class="user-info">
       👤 Connecté en tant que <span id="username">Inconnu</span>
+      <div style="margin-top: 10px;">
+        <a href="/profile" style="color: #667eea; text-decoration: none; font-weight: 600; font-size: 0.9rem;">📊 Voir mon profil</a>
+      </div>
+      <div id="userStats" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong id="userTitle" style="color: #667eea;">Novice</strong>
+            <span style="color: #666; font-size: 0.9rem;"> - Niveau <span id="userLevel">0</span></span>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.85rem; color: #666;">XP: <span id="userXP">0</span></div>
+            <div style="width: 100px; height: 6px; background: #e0e0e0; border-radius: 3px; margin-top: 4px; overflow: hidden;">
+              <div id="xpBar" style="height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); width: 0%; transition: width 0.3s ease;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     
     <div class="mode-options">
@@ -237,6 +429,30 @@
           </div>
         </div>
       </div>
+      
+      <div class="mode-card" id="historyCard">
+        <div class="mode-icon">📚</div>
+        <h3>Histoire</h3>
+        <p>Découvrez l'histoire du Puissance 4</p>
+      </div>
+      
+      <div class="mode-card" id="shopCard">
+        <div class="mode-icon">🛒</div>
+        <h3>Boutique</h3>
+        <p>Achetez des pièces détachées</p>
+      </div>
+      
+      <div class="mode-card" id="leaderboardCard">
+        <div class="mode-icon">🏆</div>
+        <h3>Classement</h3>
+        <p>Consultez le classement des meilleurs joueurs</p>
+      </div>
+      
+      <div class="mode-card" id="supportCard">
+        <div class="mode-icon">🎫</div>
+        <h3>Support</h3>
+        <p>Contactez notre équipe de support</p>
+      </div>
     </div>
     
     <button class="start-btn" id="startBtn" disabled>Commencer la partie</button>
@@ -257,9 +473,39 @@
         }
         const data = await res.json();
         document.getElementById('username').textContent = data.username;
+        
+        // Charger les stats (XP, niveau, titre)
+        await loadStats();
       } catch (error) {
         console.error('Erreur:', error);
         window.location.href = '/login';
+      }
+    }
+    
+    // Charger les statistiques de l'utilisateur
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/stats');
+        if (res.ok) {
+          const stats = await res.json();
+          document.getElementById('userLevel').textContent = stats.level;
+          document.getElementById('userTitle').textContent = stats.title;
+          document.getElementById('userXP').textContent = stats.xp;
+          
+          // Calculer le pourcentage de la barre d'XP
+          let percentage;
+          if (stats.level >= 20) {
+            // Niveau maximum : barre pleine
+            percentage = 100;
+          } else {
+            const xpInLevel = stats.xpInCurrentLevel;
+            const xpNeededForLevel = 5; // 5 XP par niveau
+            percentage = (xpInLevel / xpNeededForLevel) * 100;
+          }
+          document.getElementById('xpBar').style.width = percentage + '%';
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des stats:', error);
       }
     }
 
@@ -307,6 +553,9 @@
       selectedMode = 'human';
       document.getElementById('vsHumanCard').style.borderColor = '#4CAF50';
       document.getElementById('vsAICard').style.borderColor = '#e0e0e0';
+      document.getElementById('historyCard').style.borderColor = '#e0e0e0';
+      document.getElementById('shopCard').style.borderColor = '#e0e0e0';
+      document.getElementById('leaderboardCard').style.borderColor = '#e0e0e0';
       document.getElementById('difficultySelector').style.display = 'none';
       document.getElementById('humanDifficultySelector').style.display = 'block';
       document.getElementById('startBtn').disabled = false;
@@ -317,9 +566,32 @@
       selectedMode = 'ai';
       document.getElementById('vsAICard').style.borderColor = '#4CAF50';
       document.getElementById('vsHumanCard').style.borderColor = '#e0e0e0';
+      document.getElementById('historyCard').style.borderColor = '#e0e0e0';
+      document.getElementById('shopCard').style.borderColor = '#e0e0e0';
+      document.getElementById('leaderboardCard').style.borderColor = '#e0e0e0';
       document.getElementById('difficultySelector').style.display = 'block';
       document.getElementById('humanDifficultySelector').style.display = 'none';
       document.getElementById('startBtn').disabled = false;
+    });
+
+    // Sélection du mode Histoire
+    document.getElementById('historyCard').addEventListener('click', () => {
+      window.location.href = '/history';
+    });
+
+    // Sélection du mode Boutique
+    document.getElementById('shopCard').addEventListener('click', () => {
+      window.location.href = '/shop';
+    });
+
+    // Sélection du mode Classement
+    document.getElementById('leaderboardCard').addEventListener('click', () => {
+      window.location.href = '/leaderboard';
+    });
+
+    // Sélection du mode Support
+    document.getElementById('supportCard').addEventListener('click', () => {
+      window.location.href = '/support';
     });
 
     // Sélection de la difficulté IA
@@ -354,3 +626,4 @@
   </script>
 </body>
 </html>
+

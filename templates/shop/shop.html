@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Boutique - Pièces Détachées Puissance 4 - Power4 Web</title>
+  <link rel="stylesheet" href="/assets/style/style.css" />
+  <style>
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-10px);
+      }
+      60% {
+        transform: translateY(-5px);
+      }
+    }
+    
+    @keyframes shimmer {
+      0% {
+        background-position: -1000px 0;
+      }
+      100% {
+        background-position: 1000px 0;
+      }
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(100px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      animation: fadeIn 0.6s ease-out;
+    }
+    
+    .shop-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      animation: fadeInUp 0.8s ease-out;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 3px solid #667eea;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+    }
+    
+    .header h1 {
+      color: #333;
+      font-size: 2.5rem;
+      margin: 0 0 10px 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .header p {
+      color: #666;
+      font-size: 1.1rem;
+      margin: 0;
+    }
+    
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 25px;
+      margin-bottom: 40px;
+    }
+    
+    .product-card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .product-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+      transition: left 0.5s;
+    }
+    
+    .product-card:hover::before {
+      left: 100%;
+    }
+    
+    .product-card:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+      border-color: #667eea;
+    }
+    
+    .product-card:nth-child(1) {
+      animation: fadeInUp 0.6s ease-out 0.4s both;
+    }
+    
+    .product-card:nth-child(2) {
+      animation: fadeInUp 0.6s ease-out 0.5s both;
+    }
+    
+    .product-card:nth-child(3) {
+      animation: fadeInUp 0.6s ease-out 0.6s both;
+    }
+    
+    .product-card:nth-child(4) {
+      animation: fadeInUp 0.6s ease-out 0.7s both;
+    }
+    
+    .product-card:nth-child(5) {
+      animation: fadeInUp 0.6s ease-out 0.8s both;
+    }
+    
+    .product-card:nth-child(6) {
+      animation: fadeInUp 0.6s ease-out 0.9s both;
+    }
+    
+    .product-icon {
+      font-size: 4rem;
+      text-align: center;
+      margin-bottom: 15px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s ease;
+    }
+    
+    .product-card:hover .product-icon {
+      animation: bounce 0.6s ease;
+    }
+    
+    .product-name {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #333;
+      margin: 0 0 10px 0;
+      text-align: center;
+    }
+    
+    .product-description {
+      color: #666;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin: 0 0 15px 0;
+      text-align: center;
+      min-height: 60px;
+    }
+    
+    .product-price {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #667eea;
+      text-align: center;
+      margin: 15px 0;
+    }
+    
+    .product-stock {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #4CAF50;
+      margin-bottom: 15px;
+      font-weight: 500;
+    }
+    
+    .add-to-cart-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .add-to-cart-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+    
+    .add-to-cart-btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+    
+    .add-to-cart-btn:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .add-to-cart-btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+    
+    .cart-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #4CAF50;
+      color: white;
+      padding: 15px 25px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    .back-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 30px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+      position: relative;
+      overflow: hidden;
+      animation: fadeInUp 0.8s ease-out 1s both;
+    }
+    
+    .back-button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+    
+    .back-button:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+    
+    .back-button:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .cart-summary {
+      background: #f8f9fa;
+      border: 2px solid #667eea;
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 30px;
+      animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .cart-summary h3 {
+      margin: 0 0 20px 0;
+      color: #333;
+      font-size: 1.5rem;
+    }
+    
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #ddd;
+      transition: all 0.3s ease;
+      animation: fadeInUp 0.4s ease-out both;
+    }
+    
+    .cart-item:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+    
+    .cart-item:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+    
+    .cart-item:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+    
+    .cart-item:hover {
+      background: rgba(102, 126, 234, 0.05);
+      padding-left: 10px;
+    }
+    
+    .cart-item:last-child {
+      border-bottom: none;
+    }
+    
+    .cart-item-name {
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .cart-item-price {
+      color: #667eea;
+      font-weight: 600;
+    }
+    
+    .cart-total {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px solid #667eea;
+      text-align: right;
+      font-size: 1.3rem;
+      color: #333;
+    }
+    
+    #paypal-button-container {
+      margin-top: 20px;
+    }
+    
+    @media (max-width: 768px) {
+      .shop-container {
+        padding: 20px;
+      }
+      
+      .header h1 {
+        font-size: 2rem;
+      }
+      
+      .products-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="cart-notification" id="cartNotification">
+    ✅ Produit ajouté au panier !
+  </div>
+  
+  <div class="shop-container">
+    <div class="header">
+      <h1>🛒 Boutique Power4</h1>
+      <p>Pièces détachées et accessoires pour votre jeu</p>
+    </div>
+    
+    <div class="cart-summary" id="cartSummary" style="display: none;">
+      <h3>🛒 Votre Panier</h3>
+      <div id="cartItems"></div>
+      <div class="cart-total">
+        <strong>Total: <span id="cartTotal">0,00</span> €</strong>
+      </div>
+      <div id="paypal-button-container"></div>
+    </div>
+    
+    <div class="products-grid">
+      <div class="product-card">
+        <div class="product-icon">🔴</div>
+        <h3 class="product-name">Jeton Rouge (Lot de 21)</h3>
+        <p class="product-description">Jetons de couleur rouge en plastique de qualité, remplacement pour votre jeu Puissance 4.</p>
+        <div class="product-stock">✓ En stock</div>
+        <div class="product-price">4,99 €</div>
+        <button class="add-to-cart-btn" onclick="addToCart('Jeton Rouge', 4.99)">Ajouter au panier</button>
+      </div>
+      
+      <div class="product-card">
+        <div class="product-icon">🟡</div>
+        <h3 class="product-name">Jeton Jaune (Lot de 21)</h3>
+        <p class="product-description">Jetons de couleur jaune en plastique de qualité, remplacement pour votre jeu Puissance 4.</p>
+        <div class="product-stock">✓ En stock</div>
+        <div class="product-price">4,99 €</div>
+        <button class="add-to-cart-btn" onclick="addToCart('Jeton Jaune', 4.99)">Ajouter au panier</button>
+      </div>
+      
+      <div class="product-card">
+        <div class="product-icon">⚫</div>
+        <h3 class="product-name">Plateau de Jeu</h3>
+        <p class="product-description">Plateau de jeu complet en plastique rigide, dimensions standard 6x7 colonnes.</p>
+        <div class="product-stock">✓ En stock</div>
+        <div class="product-price">12,99 €</div>
+        <button class="add-to-cart-btn" onclick="addToCart('Plateau de Jeu', 12.99)">Ajouter au panier</button>
+      </div>
+      
+      <div class="product-card">
+        <div class="product-icon">🎯</div>
+        <h3 class="product-name">Support de Plateau</h3>
+        <p class="product-description">Support en métal pour maintenir le plateau verticalement, design élégant et stable.</p>
+        <div class="product-stock">✓ En stock</div>
+        <div class="product-price">19,99 €</div>
+        <button class="add-to-cart-btn" onclick="addToCart('Support de Plateau', 19.99)">Ajouter au panier</button>
+      </div>
+      
+      <div class="product-card">
+        <div class="product-icon">📦</div>
+        <h3 class="product-name">Boîte de Rangement</h3>
+        <p class="product-description">Boîte de rangement en carton rigide avec séparateurs pour organiser vos jetons.</p>
+        <div class="product-stock">✓ En stock</div>
+        <div class="product-price">7,99 €</div>
+        <button class="add-to-cart-btn" onclick="addToCart('Boîte de Rangement', 7.99)">Ajouter au panier</button>
+      </div>
+      
+      <div class="product-card">
+        <div class="product-icon">🎨</div>
+        <h3 class="product-name">Jetons Personnalisés</h3>
+        <p class="product-description">Lot de 42 jetons personnalisables avec vos couleurs préférées (rouge, bleu, vert, orange).</p>
+        <div class="product-stock">✓ En stock</div>
+        <div class="product-price">14,99 €</div>
+        <button class="add-to-cart-btn" onclick="addToCart('Jetons Personnalisés', 14.99)">Ajouter au panier</button>
+      </div>
+      
+      <div class="product-card">
+        <div class="product-icon">🔧</div>
+        <h3 class="product-name">Kit de Réparation</h3>
+        <p class="product-description">Kit complet avec vis, boulons et pièces de rechange pour réparer votre plateau endommagé.</p>
+        <div class="product-stock">✓ En stock</div>
+        <div class="product-price">9,99 €</div>
+        <button class="add-to-cart-btn" onclick="addToCart('Kit de Réparation', 9.99)">Ajouter au panier</button>
+      </div>
+      
+      <div class="product-card">
+        <div class="product-icon">📚</div>
+        <h3 class="product-name">Règles du Jeu</h3>
+        <p class="product-description">Livre illustré avec les règles officielles et des stratégies avancées pour gagner.</p>
+        <div class="product-stock">✓ En stock</div>
+        <div class="product-price">0,00 €</div>
+        <button class="add-to-cart-btn" onclick="addToCart('Règles du Jeu', 0.00)">Ajouter au panier</button>
+      </div>
+      
+      <div class="product-card">
+        <div class="product-icon">🎁</div>
+        <h3 class="product-name">Pack Complet</h3>
+        <p class="product-description">Pack complet avec plateau, 42 jetons (21 rouges + 21 jaunes), support et boîte de rangement.</p>
+        <div class="product-stock">✓ En stock</div>
+        <div class="product-price">39,00 €</div>
+        <button class="add-to-cart-btn" onclick="addToCart('Pack Complet', 39.99)">Ajouter au panier</button>
+      </div>
+    </div>
+    
+    <div style="text-align: center;">
+      <a href="/mode-selection" class="back-button">← Retour à la sélection des modes</a>
+    </div>
+  </div>
+  
+  <script>
+    let paypalClientId = '';
+    let cart = JSON.parse(localStorage.getItem('power4_cart')) || [];
+    
+    // Charger la configuration PayPal
+    async function loadPayPalConfig() {
+      try {
+        const response = await fetch('/api/paypal/config');
+        if (response.ok) {
+          const config = await response.json();
+          paypalClientId = config.clientId;
+          if (paypalClientId) {
+            // Charger le SDK PayPal avec le client ID
+            const script = document.createElement('script');
+            script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}&currency=EUR`;
+            script.onload = function() {
+              updateCartDisplay();
+            };
+            document.head.appendChild(script);
+          } else {
+            console.warn('PayPal Client ID non configuré');
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement de la config PayPal:', error);
+      }
+    }
+    
+    function addToCart(productName, price) {
+      // Ajouter au panier
+      cart.push({ name: productName, price: price });
+      localStorage.setItem('power4_cart', JSON.stringify(cart));
+      
+      // Afficher la notification
+      const notification = document.getElementById('cartNotification');
+      notification.style.display = 'block';
+      
+      // Mettre à jour l'affichage du panier
+      updateCartDisplay();
+      
+      // Masquer la notification après 3 secondes
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, 3000);
+    }
+    
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      localStorage.setItem('power4_cart', JSON.stringify(cart));
+      updateCartDisplay();
+    }
+    
+    function updateCartDisplay() {
+      const cartSummary = document.getElementById('cartSummary');
+      const cartItems = document.getElementById('cartItems');
+      const cartTotal = document.getElementById('cartTotal');
+      
+      if (cart.length === 0) {
+        cartSummary.style.display = 'none';
+        return;
+      }
+      
+      cartSummary.style.display = 'block';
+      
+      // Calculer le total
+      const total = cart.reduce((sum, item) => sum + item.price, 0);
+      cartTotal.textContent = total.toFixed(2);
+      
+      // Afficher les articles
+      cartItems.innerHTML = cart.map((item, index) => `
+        <div class="cart-item">
+          <span class="cart-item-name">${item.name}</span>
+          <div>
+            <span class="cart-item-price">${item.price.toFixed(2)} €</span>
+            <button onclick="removeFromCart(${index})" style="margin-left: 10px; background: #ff3b3b; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">✕</button>
+          </div>
+        </div>
+      `).join('');
+      
+      // Mettre à jour le bouton PayPal
+      updatePayPalButton();
+    }
+    
+    function updatePayPalButton() {
+      const container = document.getElementById('paypal-button-container');
+      container.innerHTML = '';
+      
+      if (cart.length === 0) return;
+      
+      if (!paypalClientId || typeof paypal === 'undefined') {
+        container.innerHTML = '<p style="color: #ff3b3b;">PayPal n\'est pas configuré. Veuillez configurer PAYPAL_CLIENT_ID dans vos variables d\'environnement.</p>';
+        return;
+      }
+      
+      // Recalculer le total à chaque fois (au cas où le panier a changé)
+      const currentTotal = cart.reduce((sum, item) => {
+        const price = parseFloat(item.price) || 0;
+        return sum + price;
+      }, 0);
+      
+      paypal.Buttons({
+        createOrder: function(data, actions) {
+          // Recalculer le total au moment de la création de la commande
+          const orderTotal = cart.reduce((sum, item) => {
+            const price = parseFloat(item.price) || 0;
+            return sum + price;
+          }, 0);
+          
+          // Vérifier que le panier n'est pas vide et que le total est valide
+          if (cart.length === 0) {
+            alert('Votre panier est vide !');
+            throw new Error('Panier vide');
+          }
+          
+          if (orderTotal <= 0) {
+            console.error('Panier:', cart);
+            console.error('Total calculé:', orderTotal);
+            alert('Le montant total doit être supérieur à 0 ! Veuillez vérifier votre panier.');
+            throw new Error('Montant invalide: ' + orderTotal);
+          }
+          
+          console.log('Création de commande PayPal - Items:', cart.length, 'Total:', orderTotal);
+          
+          return fetch('/api/paypal/create-order', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              items: cart,
+              total: orderTotal
+            })
+          })
+          .then(response => {
+            if (!response.ok) {
+              return response.text().then(text => {
+                throw new Error(`Erreur serveur: ${response.status} - ${text}`);
+              });
+            }
+            return response.json();
+          })
+          .then(order => {
+            if (!order || !order.id) {
+              throw new Error('Réponse invalide du serveur');
+            }
+            return order.id;
+          })
+          .catch(error => {
+            console.error('Erreur lors de la création de la commande:', error);
+            alert('Erreur lors de la création de la commande: ' + error.message);
+            throw error;
+          });
+        },
+        onApprove: function(data, actions) {
+          return fetch('/api/paypal/capture-order', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              orderID: data.orderID
+            })
+          })
+          .then(response => {
+            if (!response.ok) {
+              return response.text().then(text => {
+                throw new Error(`Erreur serveur: ${response.status} - ${text}`);
+              });
+            }
+            return response.json();
+          })
+          .then(details => {
+            if (details.status === 'COMPLETED' || details.status === 'APPROVED') {
+              alert('Transaction réussie ! Merci pour votre achat.');
+              cart = [];
+              localStorage.removeItem('power4_cart');
+              updateCartDisplay();
+            } else {
+              alert('Paiement en attente. Statut: ' + details.status);
+            }
+          })
+          .catch(error => {
+            console.error('Erreur lors de la capture du paiement:', error);
+            alert('Erreur lors du paiement: ' + error.message);
+          });
+        },
+        onError: function(err) {
+          console.error('Erreur PayPal:', err);
+          alert('Une erreur est survenue lors du paiement. Veuillez réessayer.');
+        },
+        onCancel: function(data) {
+          console.log('Paiement annulé par l\'utilisateur');
+        }
+      }).render('#paypal-button-container');
+    }
+    
+    // Initialiser l'affichage du panier au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+      loadPayPalConfig();
+      updateCartDisplay();
+    });
+  </script>
+</body>
+</html>
+

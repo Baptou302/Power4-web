@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"power4/src/auth"
 	"power4/src/logger"
+	"power4/src/models"
 	"strconv"
 	"sync"
 )
@@ -237,6 +238,9 @@ func HandlePlay(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Variable pour indiquer si l'XP a été gagnée
+	xpGained := false
+	
 	// Logger si la partie vient de se terminer (après le coup du joueur)
 	if !wasOver && currentGame.Over {
 		mode := "2 Joueurs"
@@ -249,22 +253,33 @@ func HandlePlay(w http.ResponseWriter, r *http.Request) {
 		// Déterminer le résultat pour le joueur
 		if currentGame.Message == "Match nul !" {
 			logger.LogGameDraw(username, mode, difficulty, currentGame.IsAIMode)
+			models.SaveGameResult(username, "draw", mode, difficulty, currentGame.IsAIMode, 0)
 		} else if currentGame.IsAIMode {
 			// En mode IA, le joueur 1 est toujours l'utilisateur
 			// Si currentGame.Current == 1 après placeToken, c'est que le joueur a gagné
 			// (car placeToken ne change pas Current si la partie est terminée)
 			if currentGame.Current == 1 {
 				logger.LogGameWin(username, mode, difficulty, currentGame.IsAIMode)
+				// Ajouter 5 XP pour une victoire
+				models.AddXP(username, 5)
+				models.SaveGameResult(username, "win", mode, difficulty, currentGame.IsAIMode, 5)
+				xpGained = true
 			} else {
 				// L'IA a gagné, donc le joueur a perdu
 				logger.LogGameLoss(username, mode, difficulty, currentGame.IsAIMode)
+				models.SaveGameResult(username, "loss", mode, difficulty, currentGame.IsAIMode, 0)
 			}
 		} else {
 			// Mode 2 joueurs - on suppose que le joueur connecté est le joueur 1
 			if currentGame.Current == 1 {
 				logger.LogGameWin(username, mode, difficulty, currentGame.IsAIMode)
+				// Ajouter 5 XP pour une victoire
+				models.AddXP(username, 5)
+				models.SaveGameResult(username, "win", mode, difficulty, currentGame.IsAIMode, 5)
+				xpGained = true
 			} else {
 				logger.LogGameLoss(username, mode, difficulty, currentGame.IsAIMode)
+				models.SaveGameResult(username, "loss", mode, difficulty, currentGame.IsAIMode, 0)
 			}
 		}
 	}
@@ -279,11 +294,22 @@ func HandlePlay(w http.ResponseWriter, r *http.Request) {
 				mode := "IA"
 				difficulty := currentGame.AIDifficulty
 				logger.LogGameLoss(username, mode, difficulty, currentGame.IsAIMode)
+				models.SaveGameResult(username, "loss", mode, difficulty, currentGame.IsAIMode, 0)
 			} else if currentGame.Over && currentGame.Message == "Match nul !" {
 				// Match nul après le coup de l'IA
 				mode := "IA"
 				difficulty := currentGame.AIDifficulty
 				logger.LogGameDraw(username, mode, difficulty, currentGame.IsAIMode)
+				models.SaveGameResult(username, "draw", mode, difficulty, currentGame.IsAIMode, 0)
+			} else if currentGame.Over && currentGame.Current == 1 {
+				// Le joueur a gagné après le coup de l'IA (cas rare mais possible)
+				mode := "IA"
+				difficulty := currentGame.AIDifficulty
+				logger.LogGameWin(username, mode, difficulty, currentGame.IsAIMode)
+				// Ajouter 5 XP pour une victoire
+				models.AddXP(username, 5)
+				models.SaveGameResult(username, "win", mode, difficulty, currentGame.IsAIMode, 5)
+				xpGained = true
 			}
 		}
 	}
@@ -297,6 +323,7 @@ func HandlePlay(w http.ResponseWriter, r *http.Request) {
 		"over":          currentGame.Over,
 		"isAIMode":      currentGame.IsAIMode,
 		"aiDifficulty":  currentGame.AIDifficulty,
+		"xpGained":      xpGained,
 	}
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, "Erreur lors de l'encodage JSON: "+err.Error(), http.StatusInternalServerError)

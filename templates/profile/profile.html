@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mon Profil - Power4 Web</title>
+  <link rel="stylesheet" href="/assets/style/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+    
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      animation: fadeIn 0.6s ease-out;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: fadeInUp 0.8s ease-out;
+    }
+    
+    .user-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .user-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      color: white;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      animation: scaleIn 0.8s ease-out 0.2s both;
+    }
+    
+    .user-avatar:hover {
+      transform: scale(1.1) rotate(360deg);
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+    }
+    
+    .user-info h1 {
+      margin: 0;
+      color: #333;
+      font-size: 2rem;
+    }
+    
+    .user-info .title {
+      color: #667eea;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-top: 5px;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-card {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .stat-card:hover::before {
+      opacity: 1;
+      animation: shimmer 2s infinite;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
+    }
+    
+    .stat-card:nth-child(1) {
+      animation: fadeInUp 0.6s ease-out 0.3s both;
+    }
+    
+    .stat-card:nth-child(2) {
+      animation: fadeInUp 0.6s ease-out 0.4s both;
+    }
+    
+    .stat-card:nth-child(3) {
+      animation: fadeInUp 0.6s ease-out 0.5s both;
+    }
+    
+    .stat-card:nth-child(4) {
+      animation: fadeInUp 0.6s ease-out 0.6s both;
+    }
+    
+    .stat-card:nth-child(5) {
+      animation: fadeInUp 0.6s ease-out 0.7s both;
+    }
+    
+    .stat-card:nth-child(6) {
+      animation: fadeInUp 0.6s ease-out 0.8s both;
+    }
+    
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+      }
+      100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+      }
+    }
+    
+    .stat-card h3 {
+      margin: 0 0 10px 0;
+      color: #666;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .stat-card .value {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #667eea;
+      margin: 10px 0;
+      transition: all 0.3s ease;
+      display: inline-block;
+    }
+    
+    .stat-card:hover .value {
+      transform: scale(1.1);
+      color: #764ba2;
+    }
+    
+    .stat-card .sub-value {
+      color: #999;
+      font-size: 0.9rem;
+    }
+    
+    .chart-container {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      animation: fadeInUp 0.8s ease-out 0.9s both;
+      transition: all 0.3s ease;
+    }
+    
+    .chart-container:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+    
+    .chart-container h2 {
+      margin: 0 0 20px 0;
+      color: #333;
+      font-size: 1.5rem;
+    }
+    
+    .history-container {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      animation: fadeInUp 0.8s ease-out 1s both;
+    }
+    
+    .history-container h2 {
+      margin: 0 0 20px 0;
+      color: #333;
+      font-size: 1.5rem;
+    }
+    
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .history-table th,
+    .history-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .history-table th {
+      background: #f8f9fa;
+      color: #666;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+    
+    .history-table td {
+      color: #333;
+    }
+    
+    .result-badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .result-win {
+      background: #4CAF50;
+      color: white;
+    }
+    
+    .result-loss {
+      background: #f44336;
+      color: white;
+    }
+    
+    .result-draw {
+      background: #ff9800;
+      color: white;
+    }
+    
+    .btn-back {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-back::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+    
+    .btn-back:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+    
+    .btn-back:hover {
+      background: linear-gradient(135deg, #5568d3 0%, #667eea 100%);
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .streak-badge {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+    
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="user-header">
+        <div class="user-avatar">{{.AvatarInitial}}</div>
+        <div class="user-info">
+          <h1>{{.Username}}</h1>
+          <div class="title">{{.Title}} - Niveau {{.Level}}</div>
+          <div style="margin-top: 10px; color: #666;">XP: {{.XP}} / 100</div>
+        </div>
+      </div>
+      <a href="/mode-selection" class="btn-back">← Retour</a>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Parties jouées</h3>
+        <div class="value">{{.Stats.TotalGames}}</div>
+        <div class="sub-value">Total</div>
+      </div>
+      
+      <div class="stat-card">
+        <h3>Victoires</h3>
+        <div class="value" style="color: #4CAF50;">{{.Stats.Wins}}</div>
+        <div class="sub-value">{{if gt .Stats.TotalGames 0}}{{printf "%.1f" .Stats.WinRate}}% de victoires{{else}}Aucune partie{{end}}</div>
+      </div>
+      
+      <div class="stat-card">
+        <h3>Défaites</h3>
+        <div class="value" style="color: #f44336;">{{.Stats.Losses}}</div>
+        <div class="sub-value">{{if gt .Stats.TotalGames 0}}{{printf "%.1f" .LossRate}}%{{else}}Aucune partie{{end}}</div>
+      </div>
+      
+      <div class="stat-card">
+        <h3>Matchs nuls</h3>
+        <div class="value" style="color: #ff9800;">{{.Stats.Draws}}</div>
+        <div class="sub-value">{{if gt .Stats.TotalGames 0}}{{printf "%.1f" .DrawRate}}%{{else}}Aucune partie{{end}}</div>
+      </div>
+      
+      <div class="stat-card">
+        <h3>Streak actuel</h3>
+        <div class="value" style="color: #ff6b6b;">{{.Stats.CurrentStreak}}</div>
+        <div class="sub-value">{{if gt .Stats.CurrentStreak 0}}Victoires consécutives{{else}}Aucun streak{{end}}</div>
+      </div>
+      
+      <div class="stat-card">
+        <h3>Meilleur streak</h3>
+        <div class="value" style="color: #9b59b6;">{{.Stats.BestStreak}}</div>
+        <div class="sub-value">Record personnel</div>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <h2>📈 Évolution de l'XP</h2>
+      <canvas id="xpChart" style="max-height: 300px; width: 100%;"></canvas>
+    </div>
+
+    <div class="history-container">
+      <h2>📋 Historique des parties</h2>
+      {{if .Stats.RecentGames}}
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Résultat</th>
+            <th>Mode</th>
+            <th>Difficulté</th>
+            <th>XP gagné</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Stats.RecentGames}}
+          <tr>
+            <td>{{.PlayedAt.Format "02/01/2006 15:04"}}</td>
+            <td>
+              {{if eq .Result "win"}}
+                <span class="result-badge result-win">Victoire</span>
+              {{else if eq .Result "loss"}}
+                <span class="result-badge result-loss">Défaite</span>
+              {{else}}
+                <span class="result-badge result-draw">Match nul</span>
+              {{end}}
+            </td>
+            <td>{{.Mode}}</td>
+            <td>{{if .IsAIMode}}{{.Difficulty}}{{else}}-{{end}}</td>
+            <td>{{if gt .XPGained 0}}+{{.XPGained}} XP{{else}}-{{end}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+      {{else}}
+      <div class="empty-state">
+        <div class="empty-state-icon">🎮</div>
+        <p>Aucune partie jouée pour le moment</p>
+        <a href="/mode-selection" class="btn-back" style="margin-top: 20px;">Jouer maintenant</a>
+      </div>
+      {{end}}
+    </div>
+  </div>
+
+  <script>
+    // Attendre que le DOM soit chargé
+    document.addEventListener('DOMContentLoaded', function() {
+      // Vérifier que Chart.js est chargé
+      if (typeof Chart === 'undefined') {
+        console.error('Chart.js n\'est pas chargé !');
+        document.getElementById('xpChart').parentElement.innerHTML = 
+          '<div class="empty-state"><div class="empty-state-icon">❌</div><p>Erreur : Chart.js n\'est pas chargé</p></div>';
+        return;
+      }
+
+      // Graphique d'évolution de l'XP
+      const xpData = {{.XPHistoryJSON}};
+      console.log('XP Data:', xpData); // Debug
+      
+      if (xpData && Array.isArray(xpData) && xpData.length > 0) {
+        const canvas = document.getElementById('xpChart');
+        if (!canvas) {
+          console.error('Canvas xpChart non trouvé !');
+          return;
+        }
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          console.error('Impossible d\'obtenir le contexte 2D du canvas');
+          return;
+        }
+        
+        const dates = xpData.map(item => {
+          const date = new Date(item.date);
+          return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+        });
+        const xpValues = xpData.map(item => item.xp);
+        
+        console.log('Dates:', dates);
+        console.log('XP Values:', xpValues);
+        
+        try {
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: dates,
+              datasets: [{
+                label: 'XP',
+                data: xpValues,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#667eea',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  padding: 12,
+                  titleColor: '#fff',
+                  bodyColor: '#fff',
+                  callbacks: {
+                    label: function(context) {
+                      return 'XP: ' + context.parsed.y;
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  ticks: {
+                    stepSize: 10
+                  },
+                  grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                  }
+                },
+                x: {
+                  grid: {
+                    display: false
+                  }
+                }
+              }
+            }
+          });
+          console.log('Graphique créé avec succès');
+        } catch (error) {
+          console.error('Erreur lors de la création du graphique:', error);
+          canvas.parentElement.innerHTML = 
+            '<div class="empty-state"><div class="empty-state-icon">❌</div><p>Erreur lors de la création du graphique</p></div>';
+        }
+      } else {
+        // Afficher un message si pas de données
+        const chartContainer = document.getElementById('xpChart');
+        if (chartContainer) {
+          chartContainer.parentElement.innerHTML = 
+            '<div class="empty-state"><div class="empty-state-icon">📊</div><p>Aucune donnée d\'XP disponible</p></div>';
+        }
+        console.log('Pas de données XP ou données invalides:', xpData);
+      }
+    });
+  </script>
+</body>
+</html>
+
