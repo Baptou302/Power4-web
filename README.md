@@ -112,7 +112,7 @@ Avant de commencer, assurez-vous d'avoir installé :
 ### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/votre-username/Power4-web.git
+git clone https://github.com/Baptou302/Power4-web.git
 cd Power4-web
 ```
 
